@@ -37,18 +37,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         String channel;
         if (update.hasMessage() && update.getMessage().hasText() && update.getMessage().getText().equals("link")) {
 
-            SendMessage message = new SendMessage().setChatId(update.getMessage().getChatId()).setText("Linked");
-            try {
+
                 SendMessage newMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
                 channel = update.getMessage().getChatId().toString();
-                sendMessage(message);
                 listener.onTelegramMessageReceived(newMessage, channel, update.getMessage().getFrom().getUserName());
 
 
-            } catch (TelegramApiException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+
 
         }
 

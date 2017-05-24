@@ -19,8 +19,8 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
     private DiscordBot discordBot;
     private TelegramBot telegramBot;
-    private Map<String, String> telegramChannels = new HashMap<>();
-    private Map<String, MessageChannel> discordChannels = new HashMap<>();
+    private BiMap<String, String> telegramChannels = HashBiMap.create();
+    private BiMap<String, MessageChannel> discordChannels = HashBiMap.create();
     private BiMap<String, MessageChannel> pairedChannels = HashBiMap.create();
 
     private String password;
@@ -29,16 +29,12 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     public static void main(String[] args) {
         TeleCordBot telecordBot = new TeleCordBot();
 
-
-        // String telegramKey = botPairings.get("MY DISCORD ID"); // MY TELEGRAM ID
-
+        //Start the Telegram and Discord bots
         telecordBot.startDiscordBot();
         telecordBot.startTelegramBot();
     }
 
     private void startTelegramBot() {
-        //pairedChannels.clear();
-        System.out.println(getClasspathString());
         ApiContextInitializer.init();
         TelegramBotsApi telegramApi = new TelegramBotsApi();
         telegramBot = new TelegramBot(this);
@@ -119,41 +115,36 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         }
     }
 
-    public String getClasspathString() {
-        StringBuffer classpath = new StringBuffer();
-        ClassLoader applicationClassLoader = this.getClass().getClassLoader();
-        if (applicationClassLoader == null) {
-            applicationClassLoader = ClassLoader.getSystemClassLoader();
-        }
-        URL[] urls = ((URLClassLoader)applicationClassLoader).getURLs();
-        for(int i=0; i < urls.length; i++) {
-            classpath.append(urls[i].getFile()).append("\r\n");
-        }
-
-        return classpath.toString();
-    }
-
-
-
-
-
-
-
-
-
     @Override
     public void onDiscordMessageReceived(String message, MessageChannel channel, String author) {
         System.out.println("Discord message received! " + message);
 
-        if (message.matches("link ........")) {
+        if (message.matches("(L|l)ink ........")) {
             password = message.substring(5);
             String telegramChannel = telegramChannels.get(password);
-            pairedChannels.put(telegramChannel, channel);
-            telegramChannels.remove(password);
+
+            if(telegramChannel != null){
+                pairedChannels.put(telegramChannel, channel);
+                telegramChannels.remove(password);
+                System.out.println("Channel has been linked to Telegram channel");
+                channel.sendMessage("Channel has been linked to Telegram channel ").queue();
+            }
+
+            else{
+                channel.sendMessage("No channel with password found");
+            }
 
 
-        } else if (message.equals("link")) {
+
+        }else if(message.equalsIgnoreCase("delink")){
+            channel.sendMessage("Channel has been delinked from Telegram channel ").queue();
+            pairedChannels.inverse().remove(channel);
+
+
+
+        } else if (message.equalsIgnoreCase("link")) {
             password = RandomStringUtils.random(8, characters);
+            discordChannels.inverse().remove(channel);
             discordChannels.put(password, channel);
             channel.sendMessage("Typed 'link " + password + "' into the Telegram Chat to link").queue();
 
