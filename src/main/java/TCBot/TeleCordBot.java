@@ -69,37 +69,30 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             password = message.getText().substring(5);
             System.out.println("Received password = " + password);
             MessageChannel discordChannel = discordChannels.get(password);
-            discordChannels.remove(password);
-            pairedChannels.put(channel, discordChannel);
+
+            if(discordChannel != null){
+                discordChannels.remove(password);
+                pairedChannels.put(channel, discordChannel);        telegramChannels.put(password, channel);
+
+                //Send the password to the telegram channel
+                telegramReply(channel, "Typed 'link " + password + "' into the Discord Channel to link.");
+
+            }
 
 
             //Begins the linking process, creates a password and then puts the password and channel pair into a Map
             //to later be linked to a discord channel
         } else if (message.getText().equalsIgnoreCase("link")) {
             password = RandomStringUtils.random(8, characters);
-            telegramChannels.put(password, channel);
-            SendMessage reply = new SendMessage().setChatId(channel).setText
-                    ("Typed 'link " + password + "' into the Discord Channel to link.");
+            telegramChannels.inverse().remove(channel);
 
-            //Send the password to the telegram channel
-            try {
-                telegramBot.sendMessage(reply);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
+
 
             //Remove the link between the current Telegram channel and its paired Discord channel if 'delink' is entered, inform the user
         } else if (message.getText().equalsIgnoreCase("delink")) {
-
-            SendMessage reply = new SendMessage().setChatId(channel).setText("The link with the Discord channel " +
-                    pairedChannels.get(channel).getName() + " has been removed.");
+            telegramReply(channel, "The link with the Discord channel has been removed.");
             pairedChannels.remove(channel);
 
-            try {
-                telegramBot.sendMessage(reply);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
 
 
             //Send the content of the message to the Discord channel that is paired with the Telegram channel, if it exists
@@ -122,6 +115,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         if (message.matches("(L|l)ink ........")) {
             password = message.substring(5);
             String telegramChannel = telegramChannels.get(password);
+            System.out.println(telegramChannel);
 
             if(telegramChannel != null){
                 pairedChannels.put(telegramChannel, channel);
@@ -131,7 +125,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             }
 
             else{
-                channel.sendMessage("No channel with password found");
+                channel.sendMessage("No channel with password found").queue();
             }
 
 
@@ -163,4 +157,17 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             }
         }
     }
+
+    public void telegramReply(String channel, String text){
+        SendMessage reply = new SendMessage().setChatId(channel).setText(text);
+
+        try {
+            telegramBot.sendMessage(reply);
+        } catch (TelegramApiException e) {
+            System.out.println("Error with telegram bot replying");
+            e.printStackTrace();
+        }
+    }
+
+
 }
