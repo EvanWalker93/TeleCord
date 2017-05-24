@@ -3,6 +3,7 @@ package TCBot;
 
 import com.google.common.collect.HashBiMap;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.TextChannel;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
@@ -17,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramBot.TelegramMessageListener {
+public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramBot.TelegramMessageListener, Serializable {
 
     private DiscordBot discordBot;
     private TelegramBot telegramBot;
@@ -39,7 +40,13 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     private void startTelegramBot() {
-
+        try {
+            readFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         ApiContextInitializer.init();
         TelegramBotsApi telegramApi = new TelegramBotsApi();
         telegramBot = new TelegramBot(this);
@@ -79,7 +86,11 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 discordChannels.remove(password);
                 pairedChannels.put(channel, discordChannel);
                 telegramReply(channel, "Telegram channel has been linked");
-
+                try {
+                    saveFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
             } else {
                 telegramReply(channel, "No channel with password found");
@@ -126,10 +137,12 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             password = message.substring(5);
             String telegramChannel = telegramChannels.get(password);
             System.out.println(telegramChannel);
+            System.out.println(channel);
 
             if(telegramChannel != null){
                 pairedChannels.put(telegramChannel, channel);
                 telegramChannels.remove(password);
+                TextChannel test = test.
                 System.out.println("Channel has been linked to Telegram channel");
                 channel.sendMessage("Channel has been linked to Telegram channel ").queue();
             }

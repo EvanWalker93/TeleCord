@@ -47,7 +47,7 @@ public class DiscordBot extends ListenerAdapter {
         //Store message content in String content
         Message message = event.getMessage();
         String content = (message.getRawContent());
-
+        event.getTextChannel().getId();
 
         listener.onDiscordMessageReceived(content, event.getChannel(), event.getAuthor().getName());
     }
