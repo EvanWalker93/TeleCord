@@ -10,10 +10,12 @@ import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import com.google.common.collect.BiMap;
 
+import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramBot.TelegramMessageListener {
 
@@ -27,6 +29,8 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     private String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     public static void main(String[] args) {
+
+
         TeleCordBot telecordBot = new TeleCordBot();
 
         //Start the Telegram and Discord bots
@@ -35,6 +39,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     private void startTelegramBot() {
+
         ApiContextInitializer.init();
         TelegramBotsApi telegramApi = new TelegramBotsApi();
         telegramBot = new TelegramBot(this);
@@ -72,11 +77,12 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
             if(discordChannel != null){
                 discordChannels.remove(password);
-                pairedChannels.put(channel, discordChannel);        telegramChannels.put(password, channel);
+                pairedChannels.put(channel, discordChannel);
+                telegramReply(channel, "Telegram channel has been linked");
 
-                //Send the password to the telegram channel
-                telegramReply(channel, "Typed 'link " + password + "' into the Discord Channel to link.");
 
+            } else {
+                telegramReply(channel, "No channel with password found");
             }
 
 
@@ -85,6 +91,10 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         } else if (message.getText().equalsIgnoreCase("link")) {
             password = RandomStringUtils.random(8, characters);
             telegramChannels.inverse().remove(channel);
+            telegramChannels.put(password, channel);
+
+            //Send the password to the telegram channel
+            telegramReply(channel, "Type 'link " + password + "' into the Discord Channel to link.");
 
 
 
@@ -168,6 +178,25 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             e.printStackTrace();
         }
     }
+
+    public void readFile() throws IOException, ClassNotFoundException {
+        FileInputStream fis = new FileInputStream("channels.ser");
+        ObjectInputStream ois = new ObjectInputStream(fis);
+        pairedChannels = (BiMap<String, MessageChannel>) ois.readObject();
+        ois.close();
+
+    }
+
+    public void saveFile() throws IOException {
+        FileOutputStream fos = new FileOutputStream("channels.ser");
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(pairedChannels);
+        oos.close();
+
+
+    }
+
+
 
 
 }
