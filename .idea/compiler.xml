@@ -6,10 +6,12 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="TeleCord" />
         <module name="TeleCordTest" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="TeleCord" target="1.8" />
       <module name="TeleCordTest" target="1.8" />
     </bytecodeTargetLevel>
   </component>

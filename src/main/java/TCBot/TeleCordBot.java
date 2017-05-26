@@ -1,7 +1,10 @@
-package TCBot;
+package main.java.TCBot;
 
 
 import com.google.common.collect.HashBiMap;
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
+import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -10,24 +13,26 @@ import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import com.google.common.collect.BiMap;
+import com.neovisionaries.ws.client.*;
 
 import java.io.*;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramBot.TelegramMessageListener, Serializable {
 
     private DiscordBot discordBot;
     private TelegramBot telegramBot;
-    private BiMap<String, String> telegramChannels = HashBiMap.create();
-    private BiMap<String, MessageChannel> discordChannels = HashBiMap.create();
-    private BiMap<String, MessageChannel> pairedChannels = HashBiMap.create();
+    private BiMap<String, String> pairedChannels = HashBiMap.create();
+    private XStream xStream = new XStream(new DomDriver());
+    private OutputStream outputStream = null;
+    private OutputStreamWriter writer;
+    private Map<String, String> tempMap = new HashMap<>();
 
     private String password;
     private String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private String discordID;
 
     public static void main(String[] args) {
 
@@ -40,13 +45,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     private void startTelegramBot() {
-        try {
-            readFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+
         ApiContextInitializer.init();
         TelegramBotsApi telegramApi = new TelegramBotsApi();
         telegramBot = new TelegramBot(this);
@@ -79,18 +78,15 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         //Change the key to the current telegram channel
         if (message.getText().matches("link ........")) {
             password = message.getText().substring(5);
+            discordID = pairedChannels.get(password);
             System.out.println("Received password = " + password);
-            MessageChannel discordChannel = discordChannels.get(password);
+            MessageChannel discordChannel = discordBot.getChannelFromID(discordID);
 
             if(discordChannel != null){
-                discordChannels.remove(password);
-                pairedChannels.put(channel, discordChannel);
+                pairedChannels.remove(password);
+                pairedChannels.put(channel, discordID);
                 telegramReply(channel, "Telegram channel has been linked");
-                try {
-                    saveFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+
 
             } else {
                 telegramReply(channel, "No channel with password found");
@@ -101,8 +97,8 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             //to later be linked to a discord channel
         } else if (message.getText().equalsIgnoreCase("link")) {
             password = RandomStringUtils.random(8, characters);
-            telegramChannels.inverse().remove(channel);
-            telegramChannels.put(password, channel);
+            pairedChannels.inverse().remove(channel);
+            pairedChannels.put(password, channel);
 
             //Send the password to the telegram channel
             telegramReply(channel, "Type 'link " + password + "' into the Discord Channel to link.");
@@ -120,7 +116,8 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         } else {
             try {
                 System.out.println("Paired Discord Channel: " + pairedChannels.get(channel));
-                discordBot.sendMessageToChannelWithText(pairedChannels.get(channel), (author + ": " + message.getText()));
+                discordID = pairedChannels.get(channel);
+                discordBot.sendMessageToChannelWithText(discordBot.getChannelFromID(discordID), (author + ": " + message.getText()));
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -130,21 +127,24 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     @Override
-    public void onDiscordMessageReceived(String message, MessageChannel channel, String author) {
+    public void onDiscordMessageReceived(String message, TextChannel channel, String author) {
         System.out.println("Discord message received! " + message);
 
-        if (message.matches("(L|l)ink ........")) {
+        discordID = channel.getId();
+
+        if (message.matches("([Ll][Ii][Nn][Kk]) ........")) {
             password = message.substring(5);
-            String telegramChannel = telegramChannels.get(password);
+            String telegramChannel = pairedChannels.get(password);
             System.out.println(telegramChannel);
             System.out.println(channel);
 
             if(telegramChannel != null){
-                pairedChannels.put(telegramChannel, channel);
-                telegramChannels.remove(password);
-                TextChannel test = test.
+                pairedChannels.put(telegramChannel, discordID);
+                pairedChannels.remove(password);
                 System.out.println("Channel has been linked to Telegram channel");
                 channel.sendMessage("Channel has been linked to Telegram channel ").queue();
+
+
             }
 
             else{
@@ -155,14 +155,14 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
         }else if(message.equalsIgnoreCase("delink")){
             channel.sendMessage("Channel has been delinked from Telegram channel ").queue();
-            pairedChannels.inverse().remove(channel);
+            pairedChannels.inverse().remove(discordID);
 
 
 
         } else if (message.equalsIgnoreCase("link")) {
             password = RandomStringUtils.random(8, characters);
-            discordChannels.inverse().remove(channel);
-            discordChannels.put(password, channel);
+            pairedChannels.inverse().remove(discordID);
+            pairedChannels.put(password, discordID);
             channel.sendMessage("Typed 'link " + password + "' into the Telegram Chat to link").queue();
 
 
@@ -170,9 +170,9 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             System.out.println("Sending message to telegram");
             try {
                 //Send message to the telegram chanel
-                System.out.println("Telegram paired Channel: " + pairedChannels.inverse().get(channel));
+                System.out.println("Telegram paired Channel: " + pairedChannels.inverse().get(discordID));
 
-                telegramBot.sendMessageToChannelWithText(pairedChannels.inverse().get(channel), message, author);
+                telegramBot.sendMessageToChannelWithText(pairedChannels.inverse().get(discordID), message, author);
 
             } catch (TelegramApiException e) {
                 System.out.println("Can't find paired Channel");
@@ -193,23 +193,20 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     public void readFile() throws IOException, ClassNotFoundException {
-        FileInputStream fis = new FileInputStream("channels.ser");
-        ObjectInputStream ois = new ObjectInputStream(fis);
-        pairedChannels = (BiMap<String, MessageChannel>) ois.readObject();
-        ois.close();
 
+        pairedChannels = (BiMap<String, String>) xStream.fromXML(new FileInputStream("savedChannels.xml"));
+        pairedChannels.putAll(tempMap);
     }
 
-    public void saveFile() throws IOException {
-        FileOutputStream fos = new FileOutputStream("channels.ser");
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(pairedChannels);
-        oos.close();
+    public void saveFileToXML() throws IOException {
+        tempMap.putAll(pairedChannels);
+        outputStream = new FileOutputStream("savedChannels.xml");
+        writer = new OutputStreamWriter(outputStream, Charset.forName("UTF-8"));
+        xStream.toXML(tempMap.values(), writer);
+
 
 
     }
-
-
 
 
 }

@@ -61,6 +61,20 @@
             <version>20.0</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/xstream/xstream -->
+        <dependency>
+            <groupId>xstream</groupId>
+            <artifactId>xstream</artifactId>
+            <version>1.2.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.neovisionaries</groupId>
+            <artifactId>nv-websocket-client</artifactId>
+            <version>2.2</version>
+        </dependency>
+
+
     </dependencies>
 
     <build>

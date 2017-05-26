@@ -1,13 +1,15 @@
-package TCBot;
+package main.java.TCBot;
 
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.login.LoginException;
 
@@ -18,26 +20,32 @@ import javax.security.auth.login.LoginException;
 public class DiscordBot extends ListenerAdapter {
 
     private static final String DISCORD_KEY = "MzA3OTU4OTE3MzExNDk2MTky.C-ahYw.hC1QdNoVFppzuueCTU3G-1o4FMY";
+    private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
 
 
     public interface DiscordMessageListener{
-        void onDiscordMessageReceived(String message, MessageChannel channel, String author);
+        void onDiscordMessageReceived(String message, TextChannel channel, String author);
     }
 
     DiscordBot(DiscordMessageListener listener) throws LoginException, InterruptedException, RateLimitedException {
         this.listener = listener;
 
-        JDA discordAPI = new JDABuilder(AccountType.BOT)
-                .setToken(DISCORD_KEY)
-                .buildBlocking();
-        discordAPI.addEventListener(this);
+        jda = new AtomicReference<>();
+        JDABuilder builder = new JDABuilder(AccountType.BOT)
+                .setToken(DISCORD_KEY);
+        jda.set(builder.buildBlocking());
+        jda.get().addEventListener(this);
+
     }
 
     void sendMessageToChannelWithText(MessageChannel messageChannel, String message){
         System.out.println("Displaying message from Telegram on Discord, message and channel" + message + messageChannel.toString());
         messageChannel.sendMessage(message).queue();
-    }
+
+
+
+        }
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event){
@@ -49,6 +57,17 @@ public class DiscordBot extends ListenerAdapter {
         String content = (message.getRawContent());
         event.getTextChannel().getId();
 
-        listener.onDiscordMessageReceived(content, event.getChannel(), event.getAuthor().getName());
+        listener.onDiscordMessageReceived(content, event.getTextChannel(), event.getAuthor().getName());
     }
+
+    public TextChannel getChannelFromID(String channel){
+        System.out.println("GET TEXT CHANNEL BY ID RETURNS: " + getJda().getTextChannelById(channel).toString());
+        return getJda().getTextChannelById(channel);
+    }
+
+    public JDA getJda() {
+        return jda.get();
+    }
+
+
 }

@@ -1,4 +1,4 @@
-package TCBot;
+package main.java.TCBot;
 
 import net.dv8tion.jda.core.entities.MessageChannel;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
