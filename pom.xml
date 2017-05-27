@@ -90,7 +90,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>TeleCordBot</mainClass>
+                            <mainClass>main.java.TeleCordBot</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
