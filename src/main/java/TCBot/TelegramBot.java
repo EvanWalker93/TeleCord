@@ -1,10 +1,11 @@
 package main.java.TCBot;
 
-import net.dv8tion.jda.core.entities.MessageChannel;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
+
+import java.io.IOException;
 
 public class TelegramBot extends TelegramLongPollingBot {
 
@@ -12,7 +13,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     public interface TelegramMessageListener {
-        void onTelegramMessageReceived(SendMessage message, String channel, String author);
+        void onTelegramMessageReceived(SendMessage message, String channel, String author) throws TelegramApiException, IOException;
     }
 
     TelegramBot(TelegramMessageListener listener) {
@@ -40,9 +41,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 SendMessage newMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
                 channel = update.getMessage().getChatId().toString();
+            try {
                 listener.onTelegramMessageReceived(newMessage, channel, update.getMessage().getFrom().getUserName());
-
-
+            } catch (TelegramApiException | IOException e) {
+                e.printStackTrace();
+            }
 
 
         }
@@ -53,7 +56,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             channel = update.getMessage().getChatId().toString();
             SendMessage message = new SendMessage().setChatId(channel).setText((update.getMessage()).getText());
 
-            listener.onTelegramMessageReceived(message, channel, update.getMessage().getFrom().getFirstName());
+            try {
+                listener.onTelegramMessageReceived(message, channel, update.getMessage().getFrom().getFirstName());
+            } catch (TelegramApiException | IOException e) {
+                e.printStackTrace();
+            }
             //listener.onTelegramMessageReceived();
 
         }

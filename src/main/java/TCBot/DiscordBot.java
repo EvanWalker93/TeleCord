@@ -9,6 +9,9 @@ import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import org.telegram.telegrambots.exceptions.TelegramApiException;
+
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.login.LoginException;
@@ -25,7 +28,7 @@ public class DiscordBot extends ListenerAdapter {
 
 
     public interface DiscordMessageListener{
-        void onDiscordMessageReceived(String message, TextChannel channel, String author);
+        void onDiscordMessageReceived(String message, TextChannel channel, String author) throws IOException, TelegramApiException;
     }
 
     DiscordBot(DiscordMessageListener listener) throws LoginException, InterruptedException, RateLimitedException {
@@ -57,15 +60,19 @@ public class DiscordBot extends ListenerAdapter {
         String content = (message.getRawContent());
         event.getTextChannel().getId();
 
-        listener.onDiscordMessageReceived(content, event.getTextChannel(), event.getAuthor().getName());
+        try {
+            listener.onDiscordMessageReceived(content, event.getTextChannel(), event.getAuthor().getName());
+        } catch (IOException | TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
-    public TextChannel getChannelFromID(String channel){
+    TextChannel getChannelFromID(String channel){
         System.out.println("GET TEXT CHANNEL BY ID RETURNS: " + getJda().getTextChannelById(channel).toString());
         return getJda().getTextChannelById(channel);
     }
 
-    public JDA getJda() {
+    private JDA getJda() {
         return jda.get();
     }
 
