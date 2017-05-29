@@ -34,25 +34,32 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
 
-        // Link the chats together
+
+
+
         String channel;
+
+        //TODO This might not be needed, since checking the message content is handled later
         if (update.hasMessage() && update.getMessage().hasText() && update.getMessage().getText().equals("link")) {
 
+            SendMessage newMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
+            channel = update.getMessage().getChatId().toString();
 
-                SendMessage newMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
-                channel = update.getMessage().getChatId().toString();
             try {
                 listener.onTelegramMessageReceived(newMessage, channel, update.getMessage().getFrom().getUserName());
+
             } catch (TelegramApiException | IOException e) {
                 e.printStackTrace();
             }
 
 
-        }
 
-        // If a user makes a post in Telegram, get the text from the message
-        // and set it to object 'message'
-        else  {
+
+        }else if(update.getMessage().hasPhoto()){
+            //TODO Work on handling messages with Photos
+            update.getMessage().getPhoto()
+
+        }else  {
             channel = update.getMessage().getChatId().toString();
             SendMessage message = new SendMessage().setChatId(channel).setText((update.getMessage()).getText());
 
@@ -61,7 +68,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             } catch (TelegramApiException | IOException e) {
                 e.printStackTrace();
             }
-            //listener.onTelegramMessageReceived();
+
 
         }
 

@@ -59,6 +59,8 @@ public class DiscordBot extends ListenerAdapter {
         Message message = event.getMessage();
         String content = (message.getRawContent());
         event.getTextChannel().getId();
+        //TODO Handle attachments from Discord
+        event.getMessage().getAttachments();
 
         try {
             listener.onDiscordMessageReceived(content, event.getTextChannel(), event.getAuthor().getName());
