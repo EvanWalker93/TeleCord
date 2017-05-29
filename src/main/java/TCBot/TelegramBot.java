@@ -57,7 +57,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         }else if(update.getMessage().hasPhoto()){
             //TODO Work on handling messages with Photos
-            update.getMessage().getPhoto()
+            update.getMessage().getPhoto();
 
         }else  {
             channel = update.getMessage().getChatId().toString();
