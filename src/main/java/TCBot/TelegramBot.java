@@ -11,7 +11,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private TelegramMessageListener listener;
 
-
     public interface TelegramMessageListener {
         void onTelegramMessageReceived(SendMessage message, String channel, String author) throws TelegramApiException, IOException;
     }
@@ -19,7 +18,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     TelegramBot(TelegramMessageListener listener) {
         this.listener = listener;
     }
-
 
     @Override
     public String getBotUsername() {
@@ -33,12 +31,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-
-
-
-
         String channel;
-
         //TODO This might not be needed, since checking the message content is handled later
         if (update.hasMessage() && update.getMessage().hasText() && update.getMessage().getText().equals("link")) {
 
@@ -52,14 +45,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 e.printStackTrace();
             }
 
-
-
-
-        }else if(update.getMessage().hasPhoto()){
-            //TODO Work on handling messages with Photos
+        } else if(update.getMessage().hasPhoto()){
+            // TODO: Work on handling messages with Photos
             update.getMessage().getPhoto();
 
-        }else  {
+        } else  {
             channel = update.getMessage().getChatId().toString();
             SendMessage message = new SendMessage().setChatId(channel).setText((update.getMessage()).getText());
 
@@ -68,10 +58,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             } catch (TelegramApiException | IOException e) {
                 e.printStackTrace();
             }
-
-
         }
-
     }
 
     void sendMessageToChannelWithText(String channel, String messageText, String author) throws TelegramApiException {
@@ -79,5 +66,4 @@ public class TelegramBot extends TelegramLongPollingBot {
         SendMessage message = new SendMessage().setChatId(channel).setText(author + ": " + messageText);
         sendMessage(message);
     }
-
 }
