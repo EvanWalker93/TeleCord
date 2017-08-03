@@ -23,7 +23,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     private DiscordBot discordBot;
     private TelegramBot telegramBot;
     private BiMap<String, String> pairedChannels = HashBiMap.create();
-    private Map<String, String> tempMap = new HashMap();
+    private Map<String, String> tempMap = new HashMap<>();
     private XStream xStream = new XStream();
     private String pairedChannelsFilePath = "PairedChannels.xml";
     private File fileChecker = new File(pairedChannelsFilePath);
@@ -33,8 +33,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     private String discordID;
 
     public static void main(String[] args) {
-
-
         TeleCordBot telecordBot = new TeleCordBot();
 
         //Start the Telegram and Discord bots
@@ -43,8 +41,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     private void startTelegramBot() {
-
-
         if (fileChecker.exists()) {
             //Read in previous channel pairs from file
             try {
@@ -53,7 +49,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 e.printStackTrace();
             }
         }
-
         ApiContextInitializer.init();
         TelegramBotsApi telegramApi = new TelegramBotsApi();
         telegramBot = new TelegramBot(this);
@@ -105,8 +100,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 discordID = pairedChannels.get(channel);
                 discordBot.sendMessageToChannelWithText(discordBot.getChannelFromID(discordID), (author + ": " + message.getText()));
         }
-
-
     }
 
     @Override
@@ -121,7 +114,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
         //Switch to decide what to do based on received message content
         switch (message.toLowerCase()) {
-
             case "link":
                 password = RandomStringUtils.random(8, characters);
                 pairedChannels.inverse().remove(discordID);
@@ -142,9 +134,8 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
     }
 
-
-
     //---------------------------------------------------------------------------------------------------
+
     private void telegramReply(String channel, String text) throws TelegramApiException {
         SendMessage reply = new SendMessage().setChatId(channel).setText(text);
         telegramBot.sendMessage(reply);
@@ -165,7 +156,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         writer.close();
     }
 
-
     private boolean discordHandshake(String message, TextChannel channel) throws IOException {
 
         if (message.replace("'","").matches("([Ll][Ii][Nn][Kk]) ........")) {
@@ -178,22 +168,16 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 System.out.println("Channel has been linked to Telegram channel");
                 channel.sendMessage("Channel has been linked to Telegram channel ").queue();
                 saveFileToXML();
-
             } else {
                 channel.sendMessage("No channel with password found").queue();
             }
-
         } else {
             return false;
         }
-
         return true;
     }
 
     private boolean telegramHandshake(SendMessage message, String channel, String author) throws TelegramApiException, IOException {
-
-
-
         if (message.getText().replace("'","").matches("([Ll][Ii][Nn][Kk]) ........")) {
             password = message.getText().replace("'","").substring(5);
             discordID = pairedChannels.get(password);
@@ -205,12 +189,9 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 pairedChannels.put(channel, discordID);
                 telegramReply(channel, "Telegram channel has been linked");
                 saveFileToXML();
-
-
             } else {
                 telegramReply(channel, "No channel with password found");
             }
-
         }
         else {
             return false;

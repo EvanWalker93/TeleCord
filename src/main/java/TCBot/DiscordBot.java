@@ -18,22 +18,20 @@ import javax.security.auth.login.LoginException;
 
 /**
  * Created by Evan on 5/3/2017.
- *
  */
+
 public class DiscordBot extends ListenerAdapter {
 
     private static final String DISCORD_KEY = "MzA3OTU4OTE3MzExNDk2MTky.C-ahYw.hC1QdNoVFppzuueCTU3G-1o4FMY";
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
 
-
-    public interface DiscordMessageListener{
+    public interface DiscordMessageListener {
         void onDiscordMessageReceived(String message, TextChannel channel, String author) throws IOException, TelegramApiException;
     }
 
     DiscordBot(DiscordMessageListener listener) throws LoginException, InterruptedException, RateLimitedException {
         this.listener = listener;
-
         jda = new AtomicReference<>();
         JDABuilder builder = new JDABuilder(AccountType.BOT)
                 .setToken(DISCORD_KEY);
@@ -42,18 +40,15 @@ public class DiscordBot extends ListenerAdapter {
 
     }
 
-    void sendMessageToChannelWithText(MessageChannel messageChannel, String message){
+    void sendMessageToChannelWithText(MessageChannel messageChannel, String message) {
         System.out.println("Displaying message from Telegram on Discord, message and channel" + message + messageChannel.toString());
         messageChannel.sendMessage(message).queue();
-
-
-
-        }
+    }
 
     @Override
-    public void onMessageReceived(MessageReceivedEvent event){
+    public void onMessageReceived(MessageReceivedEvent event) {
         //Don't respond to bots
-        if(event.getAuthor().isBot()) return;;
+        if (event.getAuthor().isBot()) return;
 
         //Store message content in String content
         Message message = event.getMessage();
@@ -69,7 +64,7 @@ public class DiscordBot extends ListenerAdapter {
         }
     }
 
-    TextChannel getChannelFromID(String channel){
+    TextChannel getChannelFromID(String channel) {
         System.out.println("GET TEXT CHANNEL BY ID RETURNS: " + getJda().getTextChannelById(channel).toString());
         return getJda().getTextChannelById(channel);
     }
@@ -77,6 +72,5 @@ public class DiscordBot extends ListenerAdapter {
     private JDA getJda() {
         return jda.get();
     }
-
 
 }
