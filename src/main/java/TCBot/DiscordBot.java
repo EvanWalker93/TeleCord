@@ -12,6 +12,7 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.login.LoginException;
@@ -28,7 +29,7 @@ public class DiscordBot extends ListenerAdapter {
 
 
     public interface DiscordMessageListener{
-        void onDiscordMessageReceived(String message, TextChannel channel, String author) throws IOException, TelegramApiException;
+        void onDiscordMessageReceived(String message, TextChannel channel, String author, List<Message.Attachment> attachment) throws IOException, TelegramApiException;
     }
 
     DiscordBot(DiscordMessageListener listener) throws LoginException, InterruptedException, RateLimitedException {
@@ -51,19 +52,23 @@ public class DiscordBot extends ListenerAdapter {
         }
 
     @Override
-    public void onMessageReceived(MessageReceivedEvent event){
+    public void onMessageReceived(MessageReceivedEvent event) {
         //Don't respond to bots
-        if(event.getAuthor().isBot()) return;;
+        if (event.getAuthor().isBot()) return;
 
         //Store message content in String content
         Message message = event.getMessage();
-        String content = (message.getRawContent());
-        event.getTextChannel().getId();
-        //TODO Handle attachments from Discord
-        event.getMessage().getAttachments();
 
+        String content = (message.getContent());
+        TextChannel channel = event.getTextChannel();
+        String userName = event.getAuthor().getName();
+        List<Message.Attachment> attachment = event.getMessage().getAttachments();
+
+
+        //Pass the Discord message over to the TeleCordBot main class to decide how message will be handled.
+        //Contains the message text, the user who sent it, the channel it was from, and any attachments.
         try {
-            listener.onDiscordMessageReceived(content, event.getTextChannel(), event.getAuthor().getName());
+            listener.onDiscordMessageReceived(content, channel, userName, attachment);
         } catch (IOException | TelegramApiException e) {
             e.printStackTrace();
         }

@@ -3,6 +3,7 @@ package main.java.TCBot;
 
 import com.google.common.collect.HashBiMap;
 import com.thoughtworks.xstream.XStream;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -15,6 +16,7 @@ import com.google.common.collect.BiMap;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -110,7 +112,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     @Override
-    public void onDiscordMessageReceived(String message, TextChannel channel, String author) throws IOException, TelegramApiException {
+    public void onDiscordMessageReceived(String message, TextChannel channel, String author, List<Message.Attachment> attachment) throws IOException, TelegramApiException {
         System.out.println("Discord message received!");
         discordID = channel.getId();
 
