@@ -29,13 +29,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "TeleCord";
+        return "TeleCord_dev";
     }
 
     @Override
     public String getBotToken() {
-        return "370672972:AAE-rF-G8HchhSipsxplWJ9m1yzr2tIF-v0";
+        return "316767133:AAF-Mvb0OrAtHejI5pA18VeJe-JeyhP_Mag";
     }
+
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -44,6 +45,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         SendMessage newMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
         String channel = update.getMessage().getChatId().toString();
         String username =  update.getMessage().getFrom().getUserName();
+
+        if (update.getMessage().hasPhoto()) {
+
+        }
+
 
         try {
             listener.onTelegramMessageReceived(newMessage, channel, username);
@@ -71,38 +77,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         return null;
     }
 
-    public String getFilePath(PhotoSize photo) {
-        Objects.requireNonNull(photo);
-
-        if (photo.hasFilePath()) { // If the file_path is already present, we are done!
-            return photo.getFilePath();
-        } else { // If not, let find it
-            // We create a GetFile method and set the file_id from the photo
-            GetFile getFileMethod = new GetFile();
-            getFileMethod.setFileId(photo.getFileId());
-            try {
-                // We execute the method using AbsSender::getFile method.
-                File file = getFile(getFileMethod);
-                // We now have the file_path
-                return file.getFilePath();
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return null; // Just in case
-    }
-
-    public java.io.File downloadPhotoByFilePath(String filePath) {
-        try {
-            // Download the file calling AbsSender::downloadFile method
-            return downloadFile(filePath);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
 
     void sendMessageToChannelWithText(String channel, String messageText, String author) throws TelegramApiException {
         System.out.println("SendMessageToChannelWithText, channel: " + channel);
