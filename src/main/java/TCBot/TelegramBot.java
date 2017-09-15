@@ -1,13 +1,18 @@
 package main.java.TCBot;
 
+import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
+import org.telegram.telegrambots.api.objects.Document;
 import org.telegram.telegrambots.api.objects.File;
+import org.telegram.telegrambots.api.objects.PhotoSize;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 public class TelegramBot extends TelegramLongPollingBot {
 
@@ -21,10 +26,23 @@ public class TelegramBot extends TelegramLongPollingBot {
         SendMessage newMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
         String channel = update.getMessage().getChatId().toString();
         String username =  update.getMessage().getFrom().getUserName();
-        List<File> attachment = (List<File>) update.getMessage().getDocument();
+        java.io.File file = new java.io.File("photo.jpg");
+        java.io.File photoFile;
+        //Document attachment = update.getMessage().getDocument();
+
+        //Checks if the message from Telegram has/is a photo and sends it to Discord
+        //I'm not sure how this works and should be cleaned up
+        if (getPhoto(update) != null) {
+            file.delete();
+            file = downloadPhotoByFilePath(getFilePath(getPhoto(update)));
+            photoFile = new java.io.File("photo.jpg");
+            file.renameTo(photoFile);
+            file = new java.io.File("photo.jpg");
+        }
+
 
         try {
-            listener.onTelegramMessageReceived(newMessage, channel, username, attachment);
+            listener.onTelegramMessageReceived(newMessage, channel, username, file);
             System.out.println("Sending message to TeleCordBot");
         } catch (TelegramApiException | IOException e) {
             e.printStackTrace();
@@ -46,13 +64,22 @@ public class TelegramBot extends TelegramLongPollingBot {
         return "316767133:AAF-Mvb0OrAtHejI5pA18VeJe-JeyhP_Mag";
     }
 
+    public PhotoSize getPhoto(Update update) {
+        // Check that the update contains a message and the message has a photo
+        if (update.hasMessage() && update.getMessage().hasPhoto()) {
+            // When receiving a photo, you usually get different sizes of it
+            List<PhotoSize> photos = update.getMessage().getPhoto();
 
-    public interface TelegramMessageListener {
-        void onTelegramMessageReceived(SendMessage message, String channel, String author, List<File> attachment) throws TelegramApiException, IOException;
+            // We fetch the bigger photo
+            return photos.stream()
+                    .sorted(Comparator.comparing(PhotoSize::getFileSize).reversed())
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        // Return null if not found
+        return null;
     }
-
-
-
 
     void sendMessageToChannelWithText(String channel, String messageText, String author) throws TelegramApiException {
         System.out.println("SendMessageToChannelWithText, channel: " + channel);
@@ -60,4 +87,39 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(message);
     }
 
+    public String getFilePath(PhotoSize photo) {
+        Objects.requireNonNull(photo);
+
+        if (photo.hasFilePath()) { // If the file_path is already present, we are done!
+            return photo.getFilePath();
+        } else { // If not, let find it
+            // We create a GetFile method and set the file_id from the photo
+            GetFile getFileMethod = new GetFile();
+            getFileMethod.setFileId(photo.getFileId());
+            try {
+                // We execute the method using AbsSender::getFile method.
+                File file = getFile(getFileMethod);
+                // We now have the file_path
+                return file.getFilePath();
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        return null; // Just in case
+    }
+
+    public java.io.File downloadPhotoByFilePath(String filePath) {
+        try {
+            // Download the file calling AbsSender::downloadFile method
+            return downloadFile(filePath);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    public interface TelegramMessageListener {
+        void onTelegramMessageReceived(SendMessage message, String channel, String author, java.io.File attachment) throws TelegramApiException, IOException;
+    }
 }

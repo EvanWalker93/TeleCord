@@ -4,37 +4,24 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>TeleCordTest</groupId>
-    <artifactId>TeleCordTest</artifactId>
+    <groupId>TeleCord</groupId>
+    <artifactId>TeleCord</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-
-
-
     <repositories>
-
-    <repository>
-        <id>javacord-repo</id>
-        <url>http://repo.bastian-oppermann.de</url>
-    </repository>
-
-    <repository>
-        <id>jcenter</id>
-        <name>jcenter-bintray</name>
-        <url>http://jcenter.bintray.com</url>
-     </repository>
-
-
+        <repository>
+            <id>jcenter</id>
+            <name>jcenter-bintray</name>
+            <url>http://jcenter.bintray.com</url>
+        </repository>
     </repositories>
 
-
     <dependencies>
+
         <dependency>
-            <groupId>de.btobastian.javacord</groupId>
-            <artifactId>javacord</artifactId>
-            <version>2.0.14</version>
-            <!-- This will use the shaded javacord which contains all required dependencies -->
-            <classifier>shaded</classifier>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.1.3</version>
         </dependency>
 
         <dependency>
@@ -74,12 +61,18 @@
             <version>2.2</version>
         </dependency>
 
+
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver</artifactId>
             <version>3.4.2</version>
         </dependency>
 
+        <dependency>
+            <groupId>net.dv8tion</groupId>
+            <artifactId>JDA</artifactId>
+            <version>3.0.0_188</version>
+        </dependency>
 
     </dependencies>
 
@@ -113,7 +106,6 @@
             </plugin>
         </plugins>
     </build>
-
 
 
 </project>

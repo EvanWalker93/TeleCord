@@ -6,8 +6,11 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 
-public class DatabaseHandler {
+class DatabaseHandler {
 
     private MongoClient mongoClient;
     private MongoDatabase db ;
@@ -17,14 +20,21 @@ public class DatabaseHandler {
     private String collectionName = "messages";
     private MongoCollection<Document> messages;
 
-   public void init(){
+    //Stops MongoDb from producing an excessive amount of logs
+    private static Logger root = (Logger) LoggerFactory
+            .getLogger(Logger.ROOT_LOGGER_NAME);
+
+    static {
+        root.setLevel(Level.INFO);
+    }
+
+    void init() {
        mongoClient = new MongoClient(host, port);
        db = mongoClient.getDatabase(databaseName);
        messages = db.getCollection(collectionName);
     }
 
-
-    public void addMessage(String username, String messageContent, String date, String channel, int messageOrigin){
+    void addMessage(String username, String messageContent, String date, String channel, int messageOrigin) {
       Document message = new Document("username", username)
                        .append("message_content", messageContent)
                        .append("channel", channel)
