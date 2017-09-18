@@ -1,7 +1,9 @@
 package main.java.TCBot;
 
 import org.telegram.telegrambots.api.methods.GetFile;
+import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
+import org.telegram.telegrambots.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.api.objects.Document;
 import org.telegram.telegrambots.api.objects.File;
 import org.telegram.telegrambots.api.objects.PhotoSize;
@@ -46,6 +48,32 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.listener = listener;
     }
 
+    void sendMessageToChannel(String channel, String messageText, String author) throws TelegramApiException {
+        System.out.println("SendMessageToChannelWithText, channel: " + channel);
+        SendMessage message = new SendMessage().setChatId(channel).setText(author + ": " + messageText);
+        sendMessage(message);
+    }
+
+    //Receives a photo from Discord and sends it to Telegram
+    void sendPhotoToChannel(String channel, String messageText, String author, java.io.File file) {
+        SendPhoto photoMsg = new SendPhoto();
+        photoMsg.setNewPhoto(file);
+        photoMsg.setChatId(channel);
+        photoMsg.setCaption(author + ": " + messageText);
+
+        try {
+            sendPhoto(photoMsg);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    void sendDocumentToChannel(String channel, String messageText, String author, java.io.File file) {
+        SendDocument documentMsg = new SendDocument();
+        documentMsg.setNewDocument(file);
+        documentMsg.setChatId(channel);
+        documentMsg.setCaption(author + ": " + messageText);
+    }
 
     @Override
     public String getBotUsername() {
@@ -83,9 +111,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             tmpFile = new java.io.File(getDocumentName(update));
             file.renameTo(tmpFile);
             file = tmpFile;
-            System.out.println("File Name: " + getDocument(update).getFileName());
-            System.out.println("File Id: " + getDocument(update).getFileId());
-
 
             //Puts in blank text if message text was null to avoid null pointer exception
             //Occurs at the TeleCordBot switch that turns message text to lowercase
@@ -95,8 +120,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         return file;
     }
-
-
 
     //This method was copied off of an example program, might want to rework
     private PhotoSize getPhoto(Update update) {
@@ -122,17 +145,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         return null;
     }
 
-
     private String getDocumentName(Update update) {
         return update.getMessage().getDocument().getFileName();
-    }
-
-
-
-    void sendMessageToChannel(String channel, String messageText, String author) throws TelegramApiException {
-        System.out.println("SendMessageToChannelWithText, channel: " + channel);
-        SendMessage message = new SendMessage().setChatId(channel).setText(author + ": " + messageText);
-        sendMessage(message);
     }
 
     private String getFilePath(PhotoSize photo) {
