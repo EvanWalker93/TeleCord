@@ -72,6 +72,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return "316767133:AAF-Mvb0OrAtHejI5pA18VeJe-JeyhP_Mag";
     }
 
+    //This method was copied off of an example program, might want to rework
     private PhotoSize getPhoto(Update update) {
         // Check that the update contains a message and the message has a photo
         if (update.hasMessage() && update.getMessage().hasPhoto()) {
@@ -86,6 +87,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         // Return null if not found
+        return null;
+    }
+
+    private Document getFile(Update update) {
+        if (update.hasMessage() && update.getMessage().hasDocument()) {
+            return update.getMessage().getDocument();
+        }
         return null;
     }
 
@@ -113,6 +121,24 @@ public class TelegramBot extends TelegramLongPollingBot {
                 e.printStackTrace();
             }
         }
+        return null; // Just in case
+    }
+
+    private String getFilePath(Document document) {
+        Objects.requireNonNull(document);
+
+        // We create a GetFile method and set the file_id from the photo
+        GetFile getFileMethod = new GetFile();
+        getFileMethod.setFileId(document.getFileId());
+        try {
+            // We execute the method using AbsSender::getFile method.
+            File file = getFile(getFileMethod);
+            // We now have the file_path
+            return file.getFilePath();
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+
         return null; // Just in case
     }
 
