@@ -26,24 +26,32 @@ public class TelegramBot extends TelegramLongPollingBot {
         SendMessage newMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
         String channel = update.getMessage().getChatId().toString();
         String username =  update.getMessage().getFrom().getUserName();
-        java.io.File file = new java.io.File("photo.jpg");
+        java.io.File file = null;
         java.io.File photoFile;
-        //Document attachment = update.getMessage().getDocument();
+
 
         //Checks if the message from Telegram has/is a photo and sends it to Discord
         //I'm not sure how this works and should be cleaned up
         if (getPhoto(update) != null) {
-            file.delete();
             file = downloadPhotoByFilePath(getFilePath(getPhoto(update)));
             photoFile = new java.io.File("photo.jpg");
             file.renameTo(photoFile);
             file = new java.io.File("photo.jpg");
+
+            if (newMessage.getText() == null) {
+                newMessage.setText("");
+            }
         }
 
 
         try {
             listener.onTelegramMessageReceived(newMessage, channel, username, file);
             System.out.println("Sending message to TeleCordBot");
+
+            //Delete the file after use
+            if (file != null) {
+                file.delete();
+            }
         } catch (TelegramApiException | IOException e) {
             e.printStackTrace();
         }
@@ -64,7 +72,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return "316767133:AAF-Mvb0OrAtHejI5pA18VeJe-JeyhP_Mag";
     }
 
-    public PhotoSize getPhoto(Update update) {
+    private PhotoSize getPhoto(Update update) {
         // Check that the update contains a message and the message has a photo
         if (update.hasMessage() && update.getMessage().hasPhoto()) {
             // When receiving a photo, you usually get different sizes of it
@@ -81,13 +89,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         return null;
     }
 
-    void sendMessageToChannelWithText(String channel, String messageText, String author) throws TelegramApiException {
+    void sendMessageToChannel(String channel, String messageText, String author) throws TelegramApiException {
         System.out.println("SendMessageToChannelWithText, channel: " + channel);
         SendMessage message = new SendMessage().setChatId(channel).setText(author + ": " + messageText);
         sendMessage(message);
     }
 
-    public String getFilePath(PhotoSize photo) {
+    private String getFilePath(PhotoSize photo) {
         Objects.requireNonNull(photo);
 
         if (photo.hasFilePath()) { // If the file_path is already present, we are done!
@@ -108,7 +116,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return null; // Just in case
     }
 
-    public java.io.File downloadPhotoByFilePath(String filePath) {
+    private java.io.File downloadPhotoByFilePath(String filePath) {
         try {
             // Download the file calling AbsSender::downloadFile method
             return downloadFile(filePath);

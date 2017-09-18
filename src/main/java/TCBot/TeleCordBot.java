@@ -84,20 +84,21 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     @Override
-    public void onTelegramMessageReceived(SendMessage message, String channel, String author, File attachment) throws TelegramApiException, IOException {
+    public void onTelegramMessageReceived(SendMessage message, String channel, String author, File file) throws TelegramApiException, IOException {
         System.out.println("Telegram message received! " + message.getText());
         System.out.println("Chat ID: " + message.getChatId());
         System.out.println("Chat Channel: " + channel);
+
+        TextChannel discordChannel = null;
         discordID = pairedChannels.get(channel);
-        TextChannel discordChannel = discordBot.getChannelFromID(discordID);
+
+        if (discordID != null) {
+            discordChannel = discordBot.getChannelFromID(discordID);
+
+        }
 
         //Checks if there is a channel linked to the message origin channel
         if (telegramHandshake(message, channel, author)) {
-            return;
-        }
-
-        if (attachment != null) {
-            discordBot.sendFiles(discordChannel, message.getText(), author, attachment);
             return;
         }
 
@@ -109,7 +110,8 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 password = RandomStringUtils.random(8, characters);
                 pairedChannels.inverse().remove(channel);
                 pairedChannels.put(password, channel);
-                telegramReply(channel, "Type 'link " + password + "' into the Discord Channel to link.");
+                telegramReply(channel, "Type the following password into the Telegram channel you wish to link:");
+                telegramReply(channel, "'link " + password + "'");
                 break;
 
             case "delink":
@@ -119,7 +121,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 break;
 
             default:
-                discordBot.sendMessageToChannelWithText(discordChannel, (author + ": " + message.getText()), attachment);
+                discordBot.sendMessageToChannel(discordChannel, (author + ": " + message.getText()), file);
                 db.addMessage(author, message.getText(), ZonedDateTime.now().toString(), channel, 1);
         }
     }
@@ -142,7 +144,8 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 password = RandomStringUtils.random(8, characters);
                 pairedChannels.inverse().remove(discordID);
                 pairedChannels.put(password, discordID);
-                channel.sendMessage("Type 'link " + password + "' into the Telegram Chat to link").queue();
+                channel.sendMessage("Type the following password into the Telegram channel you wish to link:").queue();
+                channel.sendMessage("'link " + password + "'").queue();
                 break;
 
             case "delink":
@@ -153,10 +156,10 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
             default:
                 if (attachment != null) {
-                    telegramBot.sendMessageToChannelWithText(telegramChannel, attachment, author);
+                    telegramBot.sendMessageToChannel(telegramChannel, attachment, author);
                     break;
                 }
-                telegramBot.sendMessageToChannelWithText(telegramChannel, message, author);
+                telegramBot.sendMessageToChannel(telegramChannel, message, author);
                 db.addMessage(author, message, ZonedDateTime.now().toString(), channel.getName(), 0);
                 break;
         }

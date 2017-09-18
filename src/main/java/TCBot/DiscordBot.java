@@ -28,7 +28,7 @@ public class DiscordBot extends ListenerAdapter {
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
 
-    void sendMessageToChannelWithText(MessageChannel messageChannel, String message, File file) throws IOException {
+    void sendMessageToChannel(MessageChannel messageChannel, String message, File file) throws IOException {
         System.out.println("Displaying message from Telegram on Discord, message and channel" + message + messageChannel.toString());
         Message msg = new MessageBuilder().append(message).build();
 
@@ -98,7 +98,7 @@ public class DiscordBot extends ListenerAdapter {
     }
 
     TextChannel getChannelFromID(String channel) {
-        System.out.println("GET TEXT CHANNEL BY ID RETURNS: " + getJda().getTextChannelById(channel).toString());
+        //System.out.println("GET TEXT CHANNEL BY ID RETURNS: " + getJda().getTextChannelById(channel).toString());
         return getJda().getTextChannelById(channel);
     }
 
