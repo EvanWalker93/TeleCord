@@ -61,11 +61,17 @@ public class DiscordBot extends ListenerAdapter {
             event.getMessage().getId();
         }
 
+
         //Store message content to pass to Telegram
         Message message = event.getMessage();
         String content = (message.getContent());
         TextChannel channel = event.getTextChannel();
         String userName = event.getAuthor().getName();
+
+        File file = new File(message.getAttachments().get(0).getFileName());
+        message.getAttachments().get(0).download(file);
+        System.out.println(file.getName());
+
 
 
         List<Message.Attachment> attachment = event.getMessage().getAttachments();
@@ -81,7 +87,8 @@ public class DiscordBot extends ListenerAdapter {
         //Pass the Discord message over to the TeleCordBot main class to decide how message will be handled.
         //Contains the message text, the user who sent it, the channel it was from, and any attachments.
         try {
-            listener.onDiscordMessageReceived(content, channel, userName, fileUrl);
+            listener.onDiscordMessageReceived(content, channel, userName, file);
+            file.delete();
         } catch (IOException | TelegramApiException e) {
             e.printStackTrace();
         }
@@ -103,7 +110,7 @@ public class DiscordBot extends ListenerAdapter {
     }
 
     public interface DiscordMessageListener {
-        void onDiscordMessageReceived(String message, TextChannel channel, String author, String attachment) throws IOException, TelegramApiException;
+        void onDiscordMessageReceived(String message, TextChannel channel, String author, File attachment) throws IOException, TelegramApiException;
     }
 
     private JDA getJda() {

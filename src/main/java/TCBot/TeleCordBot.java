@@ -5,6 +5,7 @@ import com.google.common.collect.HashBiMap;
 import com.thoughtworks.xstream.XStream;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
@@ -127,7 +128,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     @Override
-    public void onDiscordMessageReceived(String message, TextChannel channel, String author, String attachment) throws IOException, TelegramApiException {
+    public void onDiscordMessageReceived(String message, TextChannel channel, String author, File file) throws IOException, TelegramApiException {
         System.out.println("Discord message received!");
         discordID = channel.getId();
         String telegramChannel = pairedChannels.inverse().get(discordID);
@@ -155,10 +156,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 break;
 
             default:
-                if (attachment != null) {
-                    telegramBot.sendMessageToChannel(telegramChannel, attachment, author);
-                    break;
-                }
+                checkAndSendFile(telegramChannel, message, author, file);
                 telegramBot.sendMessageToChannel(telegramChannel, message, author);
                 db.addMessage(author, message, ZonedDateTime.now().toString(), channel.getName(), 0);
                 break;
@@ -186,6 +184,43 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         FileWriter writer = new FileWriter(pairedChannelsFilePath);
         writer.write(xml);
         writer.close();
+    }
+
+    private String getFileType(File file) {
+        String extension = FilenameUtils.getExtension(file.getAbsolutePath());
+        String fileType = null;
+        switch (extension) {
+            case "jpeg":
+            case "png":
+            case "gif":
+            case "webp":
+                fileType = "image";
+                break;
+            case "mp4":
+                fileType = "video";
+                break;
+            default:
+                fileType = "other";
+                break;
+        }
+
+        return fileType;
+    }
+
+    private void checkAndSendFile(String telegramChannel, String message, String author, File file) {
+        if (file != null) {
+            switch (getFileType(file)) {
+                case "image":
+                    telegramBot.sendPhoto(telegramChannel, message, author, file);
+                    break;
+                case "video":
+                    //telegramBot.sendVideo(telegramChannel, message, author, file);
+                    break;
+                case "other":
+                    telegramBot.sendDocument(telegramChannel, message, author, file);
+                    break;
+            }
+        }
     }
 
 

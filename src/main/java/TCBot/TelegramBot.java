@@ -55,7 +55,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     //Receives a photo from Discord and sends it to Telegram
-    void sendPhotoToChannel(String channel, String messageText, String author, java.io.File file) {
+    void sendPhoto(String channel, String messageText, String author, java.io.File file) {
         SendPhoto photoMsg = new SendPhoto();
         photoMsg.setNewPhoto(file);
         photoMsg.setChatId(channel);
@@ -67,12 +67,23 @@ public class TelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
-    
-    void sendDocumentToChannel(String channel, String messageText, String author, java.io.File file) {
+
+    void sendDocument(String channel, String messageText, String author, java.io.File file) {
         SendDocument documentMsg = new SendDocument();
         documentMsg.setNewDocument(file);
         documentMsg.setChatId(channel);
-        documentMsg.setCaption(author + ": " + messageText);
+
+        if (messageText == null || Objects.equals(messageText, "")) {
+            documentMsg.setCaption("File from " + author);
+        } else {
+            documentMsg.setCaption(author + ": " + messageText);
+        }
+        try {
+            sendDocument(documentMsg);
+            file.delete();
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
