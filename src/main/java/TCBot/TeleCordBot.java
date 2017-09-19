@@ -156,8 +156,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 break;
 
             default:
-                checkAndSendFile(telegramChannel, message, author, file);
-                telegramBot.sendMessageToChannel(telegramChannel, message, author);
+                telegramSendMessage(telegramChannel, message, author, file);
                 db.addMessage(author, message, ZonedDateTime.now().toString(), channel.getName(), 0);
                 break;
         }
@@ -188,15 +187,14 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
     private String getFileType(File file) {
         String extension = FilenameUtils.getExtension(file.getAbsolutePath());
-        String fileType = null;
+        String fileType;
         switch (extension) {
-            case "jpeg":
+            case "jpg":
             case "png":
-            case "gif":
-            case "webp":
                 fileType = "image";
                 break;
             case "mp4":
+            case "webm":
                 fileType = "video";
                 break;
             default:
@@ -207,18 +205,26 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         return fileType;
     }
 
-    private void checkAndSendFile(String telegramChannel, String message, String author, File file) {
+    private void telegramSendMessage(String telegramChannel, String message, String author, File file) {
+        //Checks file extension if there is one, sends file based on extension.
+        // If no file, send message with no attachment.
         if (file != null) {
             switch (getFileType(file)) {
                 case "image":
                     telegramBot.sendPhoto(telegramChannel, message, author, file);
                     break;
                 case "video":
-                    //telegramBot.sendVideo(telegramChannel, message, author, file);
+                    telegramBot.sendVideo(telegramChannel, message, author, file);
                     break;
                 case "other":
                     telegramBot.sendDocument(telegramChannel, message, author, file);
                     break;
+            }
+        } else {
+            try {
+                telegramBot.sendMessageToChannel(telegramChannel, message, author);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
             }
         }
     }

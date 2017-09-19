@@ -1,9 +1,11 @@
 package main.java.TCBot;
 
+import org.apache.commons.lang3.StringUtils;
 import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.api.methods.send.SendVideo;
 import org.telegram.telegrambots.api.objects.Document;
 import org.telegram.telegrambots.api.objects.File;
 import org.telegram.telegrambots.api.objects.PhotoSize;
@@ -29,6 +31,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         String channel = update.getMessage().getChatId().toString();
         String username =  update.getMessage().getFrom().getUserName();
         java.io.File file = checkForFile(update, newMessage);
+        System.out.println(file.getName());
+
 
         //Message is sent over to the TeleCordBot for message handling logic
         try {
@@ -54,13 +58,34 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(message);
     }
 
+    void sendVideo(String channel, String messageText, String author, java.io.File file) {
+        SendVideo video = new SendVideo();
+        video.setNewVideo(file);
+        video.setChatId(channel);
+        if (messageText == null || Objects.equals(messageText, "")) {
+            video.setCaption("File from " + author);
+        } else {
+            video.setCaption(author + ": " + messageText);
+        }
+        try {
+            sendVideo(video);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
     //Receives a photo from Discord and sends it to Telegram
     void sendPhoto(String channel, String messageText, String author, java.io.File file) {
         SendPhoto photoMsg = new SendPhoto();
         photoMsg.setNewPhoto(file);
         photoMsg.setChatId(channel);
-        photoMsg.setCaption(author + ": " + messageText);
 
+
+        if (messageText == null || Objects.equals(messageText, "")) {
+            photoMsg.setCaption("File from " + author);
+        } else {
+            photoMsg.setCaption(author + ": " + messageText);
+        }
         try {
             sendPhoto(photoMsg);
         } catch (TelegramApiException e) {
@@ -116,11 +141,17 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
 
+        //TODO FIX IT
         //Checks if the Telegram message contains a document and sends it to Discord
         if (getDocument(update) != null) {
             file = downloadPhotoByFilePath(getFilePath(getDocument(update)));
             tmpFile = new java.io.File(getDocumentName(update));
-            file.renameTo(tmpFile);
+            if (tmpFile.getName().substring(tmpFile.getName().length() - 8).equals(".gif.mp4")) {
+                file.renameTo(new java.io.File(StringUtils.removeEnd(tmpFile.getName(), ".mp4")));
+            } else {
+                file.renameTo(tmpFile);
+            }
+
             file = tmpFile;
 
             //Puts in blank text if message text was null to avoid null pointer exception

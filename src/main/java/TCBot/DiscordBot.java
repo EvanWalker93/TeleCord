@@ -67,22 +67,9 @@ public class DiscordBot extends ListenerAdapter {
         String content = (message.getContent());
         TextChannel channel = event.getTextChannel();
         String userName = event.getAuthor().getName();
-
-        File file = new File(message.getAttachments().get(0).getFileName());
+        String fileName = message.getAttachments().get(0).getFileName();
+        File file = new File(fileName);
         message.getAttachments().get(0).download(file);
-        System.out.println(file.getName());
-
-
-
-        List<Message.Attachment> attachment = event.getMessage().getAttachments();
-        String fileUrl = null;
-
-        if (!attachment.isEmpty()) {
-
-            Message.Attachment files = attachment.get(0);
-            fileUrl = files.getUrl();
-        }
-
 
         //Pass the Discord message over to the TeleCordBot main class to decide how message will be handled.
         //Contains the message text, the user who sent it, the channel it was from, and any attachments.
