@@ -141,17 +141,20 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
         }
 
-        //TODO FIX IT
+
         //Checks if the Telegram message contains a document and sends it to Discord
         if (getDocument(update) != null) {
             file = downloadPhotoByFilePath(getFilePath(getDocument(update)));
-            tmpFile = new java.io.File(getDocumentName(update));
-            if (tmpFile.getName().substring(tmpFile.getName().length() - 8).equals(".gif.mp4")) {
-                file.renameTo(new java.io.File(StringUtils.removeEnd(tmpFile.getName(), ".mp4")));
+            String fileName = getDocumentName(update);
+
+            if (fileName.substring(fileName.length() - 8).equals(".gif.mp4")) {
+                fileName = StringUtils.removeEnd(fileName, ".mp4");
+                tmpFile = new java.io.File(fileName);
             } else {
-                file.renameTo(tmpFile);
+                tmpFile = new java.io.File(getDocumentName(update));
             }
 
+            file.renameTo(tmpFile);
             file = tmpFile;
 
             //Puts in blank text if message text was null to avoid null pointer exception

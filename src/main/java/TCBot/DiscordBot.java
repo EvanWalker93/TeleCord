@@ -6,7 +6,9 @@ import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.entities.TextChannel;
+import net.dv8tion.jda.core.entities.impl.MessageEmbedImpl;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
@@ -14,10 +16,11 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.login.LoginException;
+
+import static javafx.scene.input.KeyCode.M;
 
 /**
  * Created by Evan on 5/3/2017.
@@ -34,6 +37,7 @@ public class DiscordBot extends ListenerAdapter {
 
         if (file != null) {
             messageChannel.sendFile(file, msg).queue();
+            
         } else {
             messageChannel.sendMessage(msg).queue();
         }
@@ -69,7 +73,14 @@ public class DiscordBot extends ListenerAdapter {
         String userName = event.getAuthor().getName();
         String fileName = message.getAttachments().get(0).getFileName();
         File file = new File(fileName);
-        message.getAttachments().get(0).download(file);
+        try {
+            message.getAttachments().get(0).download(file);
+        } catch (Exception e) {
+            file.delete();
+            file = new File(fileName);
+            e.printStackTrace();
+        }
+
 
         //Pass the Discord message over to the TeleCordBot main class to decide how message will be handled.
         //Contains the message text, the user who sent it, the channel it was from, and any attachments.
@@ -79,16 +90,6 @@ public class DiscordBot extends ListenerAdapter {
         } catch (IOException | TelegramApiException e) {
             e.printStackTrace();
         }
-    }
-
-    public void sendFiles(MessageChannel messageChannel, String messageText, String author, File file) throws IOException {
-        Message message;
-        if (messageText == null) {
-            message = new MessageBuilder().append(author + ": ").build();
-        } else {
-            message = new MessageBuilder().append(author + ": " + messageText).build();
-        }
-        messageChannel.sendFile(file, message).queue();
     }
 
     TextChannel getChannelFromID(String channel) {

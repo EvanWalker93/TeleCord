@@ -195,6 +195,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 break;
             case "mp4":
             case "webm":
+            case "gif":
                 fileType = "video";
                 break;
             default:
