@@ -31,7 +31,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         String channel = update.getMessage().getChatId().toString();
         String username =  update.getMessage().getFrom().getUserName();
         java.io.File file = checkForFile(update, newMessage);
-        System.out.println(file.getName());
 
 
         //Message is sent over to the TeleCordBot for message handling logic

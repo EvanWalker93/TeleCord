@@ -30,6 +30,12 @@ public class DiscordBot extends ListenerAdapter {
     private static final String DISCORD_KEY = "MzUxNzI0NDkzNzY2NjU2MDAy.DJwjKQ.8xqivVFqzKeA06X0TytVTinUTZY";
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
+    Message message;
+    String content;
+    TextChannel channel;
+    String userName;
+    private String fileName;
+    private File file = null;
 
     void sendMessageToChannel(MessageChannel messageChannel, String message, File file) throws IOException {
         System.out.println("Displaying message from Telegram on Discord, message and channel" + message + messageChannel.toString());
@@ -65,28 +71,33 @@ public class DiscordBot extends ListenerAdapter {
             event.getMessage().getId();
         }
 
-
         //Store message content to pass to Telegram
-        Message message = event.getMessage();
-        String content = (message.getContent());
-        TextChannel channel = event.getTextChannel();
-        String userName = event.getAuthor().getName();
-        String fileName = message.getAttachments().get(0).getFileName();
-        File file = new File(fileName);
-        try {
-            message.getAttachments().get(0).download(file);
-        } catch (Exception e) {
-            file.delete();
-            file = new File(fileName);
-            e.printStackTrace();
-        }
+        message = event.getMessage();
+        content = (message.getContent());
+        channel = event.getTextChannel();
+        userName = event.getAuthor().getName();
 
+        if (!message.getAttachments().isEmpty()) {
+            fileName = message.getAttachments().get(0).getFileName();
+            file = new File(fileName);
+
+            try {
+                message.getAttachments().get(0).download(file);
+            } catch (Exception e) {
+                file.delete();
+                file = null;
+                e.printStackTrace();
+            }
+        }
 
         //Pass the Discord message over to the TeleCordBot main class to decide how message will be handled.
         //Contains the message text, the user who sent it, the channel it was from, and any attachments.
         try {
             listener.onDiscordMessageReceived(content, channel, userName, file);
-            file.delete();
+            if (file != null) {
+                file.delete();
+                file = null;
+            }
         } catch (IOException | TelegramApiException e) {
             e.printStackTrace();
         }
@@ -104,6 +115,4 @@ public class DiscordBot extends ListenerAdapter {
     private JDA getJda() {
         return jda.get();
     }
-
-
 }
