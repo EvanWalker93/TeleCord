@@ -99,7 +99,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         }
 
         //Checks if there is a channel linked to the message origin channel
-        if (telegramHandshake(message, channel, author)) {
+        if (telegramHandshake(message, channel)) {
             return;
         }
 
@@ -255,7 +255,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         return true;
     }
 
-    private boolean telegramHandshake(SendMessage message, String channel, String author) throws TelegramApiException, IOException {
+    private boolean telegramHandshake(SendMessage message, String channel) throws TelegramApiException, IOException {
 
 
         if (message.getText() != null && message.getText().replace("'", "").matches("([Ll][Ii][Nn][Kk]) ........")) {
