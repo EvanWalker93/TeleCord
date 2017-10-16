@@ -6,9 +6,7 @@ import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.entities.TextChannel;
-import net.dv8tion.jda.core.entities.impl.MessageEmbedImpl;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
@@ -20,22 +18,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.login.LoginException;
 
-import static javafx.scene.input.KeyCode.M;
 
-/**
- * Created by Evan on 5/3/2017.
- */
 public class DiscordBot extends ListenerAdapter {
 
-    private static final String DISCORD_KEY = "MzUxNzI0NDkzNzY2NjU2MDAy.DJwjKQ.8xqivVFqzKeA06X0TytVTinUTZY";
+    private FileReader fileReader = new FileReader();
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
-    Message message;
-    String content;
-    TextChannel channel;
-    String userName;
-    private String fileName;
     private File file = null;
+    private String token = fileReader.getTokens("discordToken");
 
     void sendMessageToChannel(MessageChannel messageChannel, String message, File file) throws IOException {
         System.out.println("Displaying message from Telegram on Discord, message and channel" + message + messageChannel.toString());
@@ -54,7 +44,7 @@ public class DiscordBot extends ListenerAdapter {
 
         jda = new AtomicReference<>();
         JDABuilder builder = new JDABuilder(AccountType.BOT)
-                .setToken(DISCORD_KEY);
+                .setToken(token);
         jda.set(builder.buildBlocking());
         jda.get().addEventListener(this);
 
@@ -72,13 +62,13 @@ public class DiscordBot extends ListenerAdapter {
         }
 
         //Store message content to pass to Telegram
-        message = event.getMessage();
-        content = (message.getContent());
-        channel = event.getTextChannel();
-        userName = event.getAuthor().getName();
+        Message message = event.getMessage();
+        String content = (message.getContent());
+        TextChannel channel = event.getTextChannel();
+        String userName = event.getAuthor().getName();
 
         if (!message.getAttachments().isEmpty()) {
-            fileName = message.getAttachments().get(0).getFileName();
+            String fileName = message.getAttachments().get(0).getFileName();
             file = new File(fileName);
 
             try {

@@ -21,6 +21,8 @@ import java.util.Objects;
 public class TelegramBot extends TelegramLongPollingBot {
 
     private TelegramMessageListener listener;
+    private FileReader fileReader = new FileReader();
+    private String token = fileReader.getTokens("telegramToken");
 
 
     @Override
@@ -117,7 +119,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return "316767133:AAF-Mvb0OrAtHejI5pA18VeJe-JeyhP_Mag";
+        return token;
     }
 
     private java.io.File checkForFile(Update update, SendMessage newMessage) {

@@ -14,6 +14,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 import com.google.common.collect.BiMap;
 
 
+
 import java.io.*;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -45,7 +46,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         telecordBot.startDiscordBot();
         telecordBot.startTelegramBot();
         telecordBot.db.init();
-
     }
 
 
@@ -122,8 +122,10 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 break;
 
             default:
-                discordBot.sendMessageToChannel(discordChannel, (author + ": " + message.getText()), file);
-                db.addMessage(author, message.getText(), ZonedDateTime.now().toString(), channel, 1);
+                if (pairedChannels.get(channel) != null) {
+                    discordBot.sendMessageToChannel(discordChannel, (author + ": " + message.getText()), file);
+                    db.addMessage(author, message.getText(), ZonedDateTime.now().toString(), channel, 1);
+                }
         }
     }
 
@@ -156,9 +158,11 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 break;
 
             default:
-                telegramSendMessage(telegramChannel, message, author, file);
-                db.addMessage(author, message, ZonedDateTime.now().toString(), channel.getName(), 0);
-                break;
+                if (pairedChannels.inverse().get(discordID) != null) {
+                    telegramSendMessage(telegramChannel, message, author, file);
+                    db.addMessage(author, message, ZonedDateTime.now().toString(), channel.getName(), 0);
+                }
+
         }
 
     }
