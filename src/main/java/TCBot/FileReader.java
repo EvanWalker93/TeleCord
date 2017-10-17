@@ -25,12 +25,9 @@ class FileReader {
             NodeList nList = doc.getElementsByTagName("tokens");
 
             Node nNode = nList.item(branch);
-            System.out.println("Node Name: " + nNode.getNodeName());
             Element eElement = (Element) nNode;
-
-            System.out.println(eElement.getAttribute("branch"));
-
             token = eElement.getElementsByTagName(bot).item(0).getTextContent();
+
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1,8 +1,8 @@
 package main.java.TCBot;
 
-
 import com.google.common.collect.HashBiMap;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.converters.extended.NamedMapConverter;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
 import org.apache.commons.io.FilenameUtils;
@@ -12,9 +12,6 @@ import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 import com.google.common.collect.BiMap;
-
-
-
 import java.io.*;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -29,6 +26,8 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     private BiMap<String, String> pairedChannels = HashBiMap.create();
     private Map<String, String> tempMap = new HashMap();
     private XStream xStream = new XStream();
+    NamedMapConverter namedMapConverter = new NamedMapConverter(xStream.getMapper(), "Pair", "Discord", String.class, "Telegram", String.class);
+
     private String pairedChannelsFilePath = "PairedChannels.xml";
     private File fileChecker = new File(pairedChannelsFilePath);
 
@@ -46,10 +45,13 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         telecordBot.startDiscordBot();
         telecordBot.startTelegramBot();
         telecordBot.db.init();
+
     }
 
 
     private void readPairedChannelsXml() {
+        xStream.registerConverter(namedMapConverter);
+
         if (fileChecker.exists()) {
             //Read in previous channel pairs from file
             try {
@@ -87,8 +89,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     @Override
     public void onTelegramMessageReceived(SendMessage message, String channel, String author, File file) throws TelegramApiException, IOException {
         System.out.println("Telegram message received! " + message.getText());
-        System.out.println("Chat ID: " + message.getChatId());
-        System.out.println("Chat Channel: " + channel);
+        System.out.println("Telegram Chat ID: " + message.getChatId());
 
         TextChannel discordChannel = null;
         discordID = pairedChannels.get(channel);
@@ -113,6 +114,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 pairedChannels.put(password, channel);
                 telegramReply(channel, "Type the following password into the Telegram channel you wish to link:");
                 telegramReply(channel, "'link " + password + "'");
+                saveFileToXML();
                 break;
 
             case "delink":
@@ -132,6 +134,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     @Override
     public void onDiscordMessageReceived(String message, TextChannel channel, String author, File file) throws IOException, TelegramApiException {
         System.out.println("Discord message received!");
+        System.out.println("Discord channel ID: " + channel.getId());
         discordID = channel.getId();
         String telegramChannel = pairedChannels.inverse().get(discordID);
 
@@ -175,11 +178,14 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     private void readFile() throws IOException, ClassNotFoundException {
+
         tempMap = (Map<String, String>) xStream.fromXML(new FileInputStream(pairedChannelsFilePath));
         pairedChannels.putAll(tempMap);
     }
 
     private void saveFileToXML() throws IOException {
+
+
         tempMap.clear();
         tempMap.putAll(pairedChannels);
         xStream.alias("map", java.util.HashMap.class);
