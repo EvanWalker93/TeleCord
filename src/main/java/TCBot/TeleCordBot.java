@@ -1,17 +1,17 @@
 package main.java.TCBot;
 
+import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.extended.NamedMapConverter;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
-import com.google.common.collect.BiMap;
+
 import java.io.*;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -112,16 +112,18 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         //Get the channel with the key that equals the password
         //Change the key to the current telegram channel
         switch (message.getText().toLowerCase()) {
-            case "link":
-                password = RandomStringUtils.random(8, characters);
+            case "/link":
+                password = Integer.toString(channel.hashCode());
                 pairedChannels.inverse().remove(channel);
                 pairedChannels.put(password, channel);
                 telegramReply(channel, "Type the following password into the Telegram channel you wish to link:");
                 telegramReply(channel, "'link " + password + "'");
                 saveFileToXML();
+
+                db.addTelegramChannelToDB(channel, null, null);
                 break;
 
-            case "delink":
+            case "/delink":
                 telegramReply(channel, "The link with the Discord channel has been removed.");
                 pairedChannels.remove(channel);
                 saveFileToXML();
@@ -150,15 +152,17 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         //Switch to decide what to do based on received message content
         switch (message.toLowerCase()) {
 
-            case "link":
-                password = RandomStringUtils.random(8, characters);
+            case "/link":
+                password = Integer.toString(channel.toString().hashCode());
                 pairedChannels.inverse().remove(discordID);
                 pairedChannels.put(password, discordID);
                 channel.sendMessage("Type the following password into the Telegram channel you wish to link:").queue();
                 channel.sendMessage("'link " + password + "'").queue();
+
+                db.addDiscordChannelToDB(channel.getId(), null, null);
                 break;
 
-            case "delink":
+            case "/delink":
                 channel.sendMessage("Channel has been delinked from Telegram channel ").queue();
                 pairedChannels.inverse().remove(discordID);
                 saveFileToXML();
@@ -242,8 +246,9 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
     private boolean discordHandshake(String message, TextChannel channel) throws IOException {
 
-        if (message.replace("'", "").matches("([Ll][Ii][Nn][Kk]) ........")) {
-            password = message.replace("'", "").substring(5);
+        if (message.replace("'", "").matches("/([Ll][Ii][Nn][Kk])\\s[^\\s\\\\].*")) {
+            password = message.replace("'", "").substring(6);
+            System.out.println(password);
             String telegramChannel = pairedChannels.get(password);
 
             if (telegramChannel != null) {
@@ -267,7 +272,9 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     private boolean telegramHandshake(SendMessage message, String channel) throws TelegramApiException, IOException {
 
 
-        if (message.getText() != null && message.getText().replace("'", "").matches("([Ll][Ii][Nn][Kk]) ........")) {
+        if (message.getText() != null && message.getText().replace("'", "")
+                .matches("/([Ll][Ii][Nn][Kk])\\s[^\\s\\\\].*")) {
+
             password = message.getText().replace("'", "").substring(5);
             discordID = pairedChannels.get(password);
             System.out.println("TeleCord bot: Received password = " + password);
