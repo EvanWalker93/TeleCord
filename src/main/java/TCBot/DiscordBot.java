@@ -12,11 +12,10 @@ import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
+import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
-
-import javax.security.auth.login.LoginException;
 
 
 public class DiscordBot extends ListenerAdapter {
@@ -28,7 +27,7 @@ public class DiscordBot extends ListenerAdapter {
     private String token = fileReader.getTokens("discordToken");
 
     void sendMessageToChannel(MessageChannel messageChannel, String message, File file) throws IOException {
-        System.out.println("Displaying message from Telegram on Discord, message and channel" + message + messageChannel.toString());
+        System.out.println("Discord bot: Sending message to Discord");
         Message msg = new MessageBuilder().append(message).build();
 
         if (file != null) {
@@ -52,6 +51,8 @@ public class DiscordBot extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
+        System.out.println("Discord bot: Message received from Discord");
+
         //Don't respond to bots
         if (event.getAuthor().isBot()) return;
 
@@ -60,7 +61,6 @@ public class DiscordBot extends ListenerAdapter {
         if (event.getMessage().isEdited()) {
             event.getMessage().getId();
         }
-
         //Store message content to pass to Telegram
         Message message = event.getMessage();
         String content = (message.getContent());

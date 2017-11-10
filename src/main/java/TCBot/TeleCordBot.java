@@ -79,17 +79,21 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     private void startDiscordBot() {
+        System.out.print("Loading Discord bot...");
+
         try {
             discordBot = new DiscordBot(this);
+            System.out.println(" Discord bot loaded!");
         } catch (Exception e) {
+            System.out.println(" Discord bot failed to load!");
             e.printStackTrace();
         }
     }
 
     @Override
     public void onTelegramMessageReceived(SendMessage message, String channel, String author, File file) throws TelegramApiException, IOException {
-        System.out.println("Telegram message received! " + message.getText());
-        System.out.println("Telegram Chat ID: " + message.getChatId());
+        System.out.println("TeleCord bot: Received message from Telegram bot: " + message.getText());
+        System.out.println("TeleCord bot: Telegram Chat ID: " + message.getChatId());
 
         TextChannel discordChannel = null;
         discordID = pairedChannels.get(channel);
@@ -133,8 +137,8 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
     @Override
     public void onDiscordMessageReceived(String message, TextChannel channel, String author, File file) throws IOException, TelegramApiException {
-        System.out.println("Discord message received!");
-        System.out.println("Discord channel ID: " + channel.getId());
+        System.out.println("TeleCord bot: Received message from Discord bot");
+        System.out.println("TeleCord bot: Channel ID: " + channel.getId());
         discordID = channel.getId();
         String telegramChannel = pairedChannels.inverse().get(discordID);
 
@@ -165,9 +169,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                     telegramSendMessage(telegramChannel, message, author, file);
                     db.addMessage(author, message, ZonedDateTime.now().toString(), channel.getName(), 0);
                 }
-
         }
-
     }
 
 
@@ -184,8 +186,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     private void saveFileToXML() throws IOException {
-
-
         tempMap.clear();
         tempMap.putAll(pairedChannels);
         xStream.alias("map", java.util.HashMap.class);
@@ -240,7 +240,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         }
     }
 
-
     private boolean discordHandshake(String message, TextChannel channel) throws IOException {
 
         if (message.replace("'", "").matches("([Ll][Ii][Nn][Kk]) ........")) {
@@ -250,7 +249,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             if (telegramChannel != null) {
                 pairedChannels.put(telegramChannel, discordID);
                 pairedChannels.remove(password);
-                System.out.println("Channel has been linked to Telegram channel");
+                System.out.println("TeleCord bot: Channel has been linked to Telegram channel");
                 channel.sendMessage("Channel has been linked to Telegram channel ").queue();
                 saveFileToXML();
 
@@ -271,7 +270,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         if (message.getText() != null && message.getText().replace("'", "").matches("([Ll][Ii][Nn][Kk]) ........")) {
             password = message.getText().replace("'", "").substring(5);
             discordID = pairedChannels.get(password);
-            System.out.println("Received password = " + password);
+            System.out.println("TeleCord bot: Received password = " + password);
             MessageChannel discordChannel = discordBot.getChannelFromID(discordID);
 
             if (discordChannel != null) {

@@ -27,10 +27,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        System.out.println("Telegram update received...");
+        System.out.println("Telegram bot: Received an update from Telegram");
 
         SendMessage newMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
         String channel = update.getMessage().getChatId().toString();
+        update.getMessage().getMessageId();
         String username =  update.getMessage().getFrom().getUserName();
         java.io.File file = checkForFile(update, newMessage);
 
@@ -38,7 +39,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         //Message is sent over to the TeleCordBot for message handling logic
         try {
             listener.onTelegramMessageReceived(newMessage, channel, username, file);
-            System.out.println("Sending message to TeleCordBot");
+            System.out.println("Telegram bot: Sending message to TeleCordBot");
 
             //Delete the file after use
             if (file != null) {
@@ -54,7 +55,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     void sendMessageToChannel(String channel, String messageText, String author) throws TelegramApiException {
-        System.out.println("SendMessageToChannelWithText, channel: " + channel);
+        System.out.println("Telegram bot: Sending message to channel: " + channel);
         SendMessage message = new SendMessage().setChatId(channel).setText(author + ": " + messageText);
         sendMessage(message);
     }
@@ -148,6 +149,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             file = downloadPhotoByFilePath(getFilePath(getDocument(update)));
             String fileName = getDocumentName(update);
 
+            //Convert Telegrams mp4 'gifs' back to actual gifs
             if (fileName.substring(fileName.length() - 8).equals(".gif.mp4")) {
                 fileName = StringUtils.removeEnd(fileName, ".mp4");
                 tmpFile = new java.io.File(fileName);

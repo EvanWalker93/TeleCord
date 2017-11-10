@@ -12,7 +12,7 @@ import java.io.File;
 class FileReader {
 
     //Set branch to 0 for main, 1 for dev
-    private int branch = 1;
+    private int branch = 0;
     private String token = "TEMP";
 
     String getTokens(String bot) {
