@@ -23,7 +23,7 @@ import javax.security.auth.login.LoginException;
  */
 public class DiscordBot extends ListenerAdapter {
 
-    private static final String DISCORD_KEY = "MzA3OTU4OTE3MzExNDk2MTky.C-ahYw.hC1QdNoVFppzuueCTU3G-1o4FMY";
+    private static final String DISCORD_KEY = "";
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
 
