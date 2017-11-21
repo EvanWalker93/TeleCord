@@ -15,6 +15,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -24,29 +25,29 @@ public class DiscordBot extends ListenerAdapter {
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
     private File file = null;
-    private String token = fileReader.getTokens("discordToken");
-
-    void sendMessageToChannel(MessageChannel messageChannel, String message, File file) throws IOException {
-        System.out.println("Discord bot: Sending message to Discord");
-        Message msg = new MessageBuilder().append(message).build();
-
-        if (file != null) {
-            messageChannel.sendFile(file, msg).queue();
-            
-        } else {
-            messageChannel.sendMessage(msg).queue();
-        }
-    }
 
     DiscordBot(DiscordMessageListener listener) throws LoginException, InterruptedException, RateLimitedException {
         this.listener = listener;
 
         jda = new AtomicReference<>();
+        String token = fileReader.getTokens("discordToken");
         JDABuilder builder = new JDABuilder(AccountType.BOT)
                 .setToken(token);
         jda.set(builder.buildBlocking());
         jda.get().addEventListener(this);
 
+    }
+
+    void sendMessageToChannel(MessageChannel messageChannel, String message, InputStream fis, String fileName) throws IOException {
+        System.out.println("Discord bot: Sending message to Discord");
+        Message msg = new MessageBuilder().append(message).build();
+
+        if (fis != null) {
+            messageChannel.sendFile(fis, fileName, msg).queue();
+
+        } else {
+            messageChannel.sendMessage(msg).queue();
+        }
     }
 
     @Override
@@ -74,8 +75,7 @@ public class DiscordBot extends ListenerAdapter {
             try {
                 message.getAttachments().get(0).download(file);
             } catch (Exception e) {
-                file.delete();
-                file = null;
+
                 e.printStackTrace();
             }
         }
@@ -85,8 +85,7 @@ public class DiscordBot extends ListenerAdapter {
         try {
             listener.onDiscordMessageReceived(content, channel, userName, file);
             if (file != null) {
-                file.delete();
-                file = null;
+
             }
         } catch (IOException | TelegramApiException e) {
             e.printStackTrace();

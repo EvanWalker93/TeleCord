@@ -1,6 +1,5 @@
 package main.java.TCBot;
 
-import org.apache.commons.lang3.StringUtils;
 import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
@@ -13,7 +12,10 @@ import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -23,28 +25,21 @@ public class TelegramBot extends TelegramLongPollingBot {
     private TelegramMessageListener listener;
     private FileReader fileReader = new FileReader();
     private String token = fileReader.getTokens("telegramToken");
-
+    private InputStream fis;
 
     @Override
     public void onUpdateReceived(Update update) {
         System.out.println("Telegram bot: Received an update from Telegram");
 
-        SendMessage newMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
-        String channel = update.getMessage().getChatId().toString();
-        update.getMessage().getMessageId();
-        String username =  update.getMessage().getFrom().getUserName();
-        java.io.File file = checkForFile(update, newMessage);
-
+        if (update.getMessage().hasPhoto() || update.getMessage().hasDocument()) {
+            fis = checkForFile(update);
+        } else {
+            fis = null;
+        }
 
         //Message is sent over to the TeleCordBot for message handling logic
         try {
-            listener.onTelegramMessageReceived(newMessage, channel, username, file);
-            System.out.println("Telegram bot: Sending message to TeleCordBot");
-
-            //Delete the file after use
-            if (file != null) {
-                file.delete();
-            }
+            listener.onTelegramMessageReceived(update, fis);
         } catch (TelegramApiException | IOException e) {
             e.printStackTrace();
         }
@@ -107,7 +102,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         try {
             sendDocument(documentMsg);
-            file.delete();
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
@@ -123,50 +117,32 @@ public class TelegramBot extends TelegramLongPollingBot {
         return token;
     }
 
-    private java.io.File checkForFile(Update update, SendMessage newMessage) {
+    private InputStream checkForFile(Update update) {
 
-        java.io.File file = null;
-        java.io.File tmpFile;
+        FileInputStream fis = null;
 
         //Checks if the Telegram message contains a photo and sends it to Discord
         //I'm not sure how this works and should be cleaned up
         if (getPhoto(update) != null) {
-            file = downloadPhotoByFilePath(getFilePath(getPhoto(update)));
-            tmpFile = new java.io.File("photo.jpg");
-            file.renameTo(tmpFile);
-            file = tmpFile;
-
-            //Puts in blank text if message text was null to avoid null pointer exception
-            //Occurs at the TeleCordBot switch that turns message text to lowercase
-            if (newMessage.getText() == null) {
-                newMessage.setText("");
+            try {
+                fis = new FileInputStream(downloadFile(getFilePath(getPhoto(update))));
+                //fis = new FileInputStream();
+            } catch (FileNotFoundException | TelegramApiException e) {
+                e.printStackTrace();
             }
+            return fis;
         }
-
 
         //Checks if the Telegram message contains a document and sends it to Discord
-        if (getDocument(update) != null) {
-            file = downloadPhotoByFilePath(getFilePath(getDocument(update)));
-            String fileName = getDocumentName(update);
-
-            //Convert Telegrams mp4 'gifs' back to actual gifs
-            if (fileName.substring(fileName.length() - 8).equals(".gif.mp4")) {
-                fileName = StringUtils.removeEnd(fileName, ".mp4");
-                tmpFile = new java.io.File(fileName);
-            } else {
-                tmpFile = new java.io.File(getDocumentName(update));
+        else if (getFilePath(getDocument(update)) != null) {
+            try {
+                fis = new FileInputStream(downloadFile(getFilePath(getDocument(update))));
+            } catch (FileNotFoundException | TelegramApiException e) {
+                e.printStackTrace();
             }
-
-            file.renameTo(tmpFile);
-            file = tmpFile;
-
-            //Puts in blank text if message text was null to avoid null pointer exception
-            //Occurs at the TeleCordBot switch that turns message text to lowercase
-            if (newMessage.getText() == null) {
-                newMessage.setText("");
-            }
+            return fis;
         }
-        return file;
+        return null;
     }
 
     //This method was copied off of an example program, might want to rework
@@ -181,7 +157,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                     .findFirst()
                     .orElse(null);
         }
-
         // Return null if not found
         return null;
     }
@@ -193,14 +168,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         return null;
     }
 
-    private String getDocumentName(Update update) {
-        return update.getMessage().getDocument().getFileName();
-    }
-
     private String getFilePath(PhotoSize photo) {
         Objects.requireNonNull(photo);
 
         if (photo.hasFilePath()) { // If the file_path is already present, we are done!
+            System.out.println(photo.getFileId());
             return photo.getFilePath();
         } else { // If not, let find it
             // We create a GetFile method and set the file_id from the photo
@@ -236,18 +208,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return null; // Just in case
     }
 
-    private java.io.File downloadPhotoByFilePath(String filePath) {
-        try {
-            // Download the file calling AbsSender::downloadFile method
-            return downloadFile(filePath);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-
     public interface TelegramMessageListener {
-        void onTelegramMessageReceived(SendMessage message, String channel, String author, java.io.File attachment) throws TelegramApiException, IOException;
+        void onTelegramMessageReceived(Update update, InputStream fileInputStream) throws TelegramApiException, IOException;
     }
 }

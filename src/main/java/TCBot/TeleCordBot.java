@@ -10,12 +10,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
+import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.io.*;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 
 public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramBot.TelegramMessageListener, Serializable {
@@ -91,7 +93,19 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     @Override
-    public void onTelegramMessageReceived(SendMessage message, String channel, String author, File file) throws TelegramApiException, IOException {
+    public void onTelegramMessageReceived(Update update, InputStream fis) throws TelegramApiException, IOException {
+
+        String channel = update.getMessage().getChatId().toString();
+        SendMessage message = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
+        String author = update.getMessage().getFrom().getUserName();
+        String fileName = "";
+        if (update.getMessage().hasDocument()) {
+            fileName = update.getMessage().getDocument().getFileName();
+        } else if (update.getMessage().hasPhoto()) {
+            fileName = UUID.randomUUID().toString() + ".jpg";
+        }
+
+
         System.out.println("TeleCord bot: Received message from Telegram bot: " + message.getText());
         System.out.println("TeleCord bot: Telegram Chat ID: " + message.getChatId());
 
@@ -111,6 +125,10 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         //Check if message containing 'link' also includes a password
         //Get the channel with the key that equals the password
         //Change the key to the current telegram channel
+        if (message.getText() == null) {
+            message.setText("");
+        }
+
         switch (message.getText().toLowerCase()) {
             case "/link":
                 password = Integer.toString(channel.hashCode());
@@ -131,7 +149,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
             default:
                 if (pairedChannels.get(channel) != null) {
-                    discordBot.sendMessageToChannel(discordChannel, (author + ": " + message.getText()), file);
+                    discordBot.sendMessageToChannel(discordChannel, (author + ": " + message.getText()), fis, fileName);
                     db.addMessage(author, message.getText(), ZonedDateTime.now().toString(), channel, 1);
                 }
         }
