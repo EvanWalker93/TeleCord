@@ -6,7 +6,6 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.extended.NamedMapConverter;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
-import org.apache.commons.io.FilenameUtils;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
@@ -93,7 +92,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     }
 
     @Override
-    public void onTelegramMessageReceived(Update update, InputStream fis) throws TelegramApiException, IOException {
+    public void onTelegramMessageReceived(Update update, FileHandler file) throws TelegramApiException, IOException {
 
         String channel = update.getMessage().getChatId().toString();
         SendMessage message = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
@@ -149,14 +148,14 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
             default:
                 if (pairedChannels.get(channel) != null) {
-                    discordBot.sendMessageToChannel(discordChannel, (author + ": " + message.getText()), fis, fileName);
+                    discordBot.sendMessageToChannel(discordChannel, (author + ": " + message.getText()), file, fileName);
                     db.addMessage(author, message.getText(), ZonedDateTime.now().toString(), channel, 1);
                 }
         }
     }
 
     @Override
-    public void onDiscordMessageReceived(String message, TextChannel channel, String author, File file) throws IOException, TelegramApiException {
+    public void onDiscordMessageReceived(String message, TextChannel channel, String author, FileHandler file) throws IOException, TelegramApiException {
         System.out.println("TeleCord bot: Received message from Discord bot");
         System.out.println("TeleCord bot: Channel ID: " + channel.getId());
         discordID = channel.getId();
@@ -217,8 +216,9 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         writer.close();
     }
 
-    private String getFileType(File file) {
-        String extension = FilenameUtils.getExtension(file.getAbsolutePath());
+    private String getFileType(FileHandler file) {
+        String extension = file.getFileExtension();
+
         String fileType;
         switch (extension) {
             case "jpg":
@@ -238,7 +238,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         return fileType;
     }
 
-    private void telegramSendMessage(String telegramChannel, String message, String author, File file) {
+    private void telegramSendMessage(String telegramChannel, String message, String author, FileHandler file) {
         //Checks file extension if there is one, sends file based on extension.
         // If no file, send message with no attachment.
         if (file != null) {

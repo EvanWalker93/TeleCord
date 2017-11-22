@@ -13,24 +13,24 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import javax.security.auth.login.LoginException;
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicReference;
 
 
 public class DiscordBot extends ListenerAdapter {
 
-    private FileReader fileReader = new FileReader();
+    private TokenReader tokenReader = new TokenReader();
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
-    private File file = null;
+    private FileInputStream fis = null;
+    private FileHandler file = null;
 
     DiscordBot(DiscordMessageListener listener) throws LoginException, InterruptedException, RateLimitedException {
         this.listener = listener;
 
         jda = new AtomicReference<>();
-        String token = fileReader.getTokens("discordToken");
+        String token = tokenReader.getTokens("discordToken");
         JDABuilder builder = new JDABuilder(AccountType.BOT)
                 .setToken(token);
         jda.set(builder.buildBlocking());
@@ -38,12 +38,12 @@ public class DiscordBot extends ListenerAdapter {
 
     }
 
-    void sendMessageToChannel(MessageChannel messageChannel, String message, InputStream fis, String fileName) throws IOException {
+    void sendMessageToChannel(MessageChannel messageChannel, String message, FileHandler fis, String fileName) throws IOException {
         System.out.println("Discord bot: Sending message to Discord");
         Message msg = new MessageBuilder().append(message).build();
 
         if (fis != null) {
-            messageChannel.sendFile(fis, fileName, msg).queue();
+            messageChannel.sendFile(fis.getFis(), fileName, msg).queue();
 
         } else {
             messageChannel.sendMessage(msg).queue();
@@ -69,36 +69,31 @@ public class DiscordBot extends ListenerAdapter {
         String userName = event.getAuthor().getName();
 
         if (!message.getAttachments().isEmpty()) {
-            String fileName = message.getAttachments().get(0).getFileName();
-            file = new File(fileName);
-
             try {
-                message.getAttachments().get(0).download(file);
-            } catch (Exception e) {
-
+                file = new FileHandler(message);
+            } catch (IOException e) {
                 e.printStackTrace();
             }
+        } else {
+            file = null;
         }
 
         //Pass the Discord message over to the TeleCordBot main class to decide how message will be handled.
         //Contains the message text, the user who sent it, the channel it was from, and any attachments.
         try {
             listener.onDiscordMessageReceived(content, channel, userName, file);
-            if (file != null) {
-
-            }
         } catch (IOException | TelegramApiException e) {
             e.printStackTrace();
         }
     }
 
+
     TextChannel getChannelFromID(String channel) {
-        //System.out.println("GET TEXT CHANNEL BY ID RETURNS: " + getJda().getTextChannelById(channel).toString());
         return getJda().getTextChannelById(channel);
     }
 
     public interface DiscordMessageListener {
-        void onDiscordMessageReceived(String message, TextChannel channel, String author, File attachment) throws IOException, TelegramApiException;
+        void onDiscordMessageReceived(String message, TextChannel channel, String author, FileHandler attachment) throws IOException, TelegramApiException;
     }
 
     private JDA getJda() {

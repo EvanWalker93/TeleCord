@@ -1,45 +1,39 @@
 package main.java.TCBot;
 
-import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.api.methods.send.SendVideo;
-import org.telegram.telegrambots.api.objects.Document;
-import org.telegram.telegrambots.api.objects.File;
-import org.telegram.telegrambots.api.objects.PhotoSize;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Objects;
 
 public class TelegramBot extends TelegramLongPollingBot {
 
     private TelegramMessageListener listener;
-    private FileReader fileReader = new FileReader();
-    private String token = fileReader.getTokens("telegramToken");
-    private InputStream fis;
+    private TokenReader tokenReader = new TokenReader();
+    private String token = tokenReader.getTokens("telegramToken");
+    private String botUserName = tokenReader.getUserName();
+    private FileHandler fileHandler = null;
 
     @Override
     public void onUpdateReceived(Update update) {
         System.out.println("Telegram bot: Received an update from Telegram");
-
         if (update.getMessage().hasPhoto() || update.getMessage().hasDocument()) {
-            fis = checkForFile(update);
-        } else {
-            fis = null;
+            try {
+                fileHandler = new FileHandler(update);
+            } catch (IOException | TelegramApiException e) {
+                e.printStackTrace();
+            }
         }
+
 
         //Message is sent over to the TeleCordBot for message handling logic
         try {
-            listener.onTelegramMessageReceived(update, fis);
+            listener.onTelegramMessageReceived(update, fileHandler);
         } catch (TelegramApiException | IOException e) {
             e.printStackTrace();
         }
@@ -55,9 +49,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(message);
     }
 
-    void sendVideo(String channel, String messageText, String author, java.io.File file) {
+    void sendVideo(String channel, String messageText, String author, FileHandler file) {
         SendVideo video = new SendVideo();
-        video.setNewVideo(file);
+        video.setNewVideo(file.getFileName(), file.getFis());
         video.setChatId(channel);
         if (messageText == null || Objects.equals(messageText, "")) {
             video.setCaption("File from " + author);
@@ -72,9 +66,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     //Receives a photo from Discord and sends it to Telegram
-    void sendPhoto(String channel, String messageText, String author, java.io.File file) {
+    void sendPhoto(String channel, String messageText, String author, FileHandler file) {
         SendPhoto photoMsg = new SendPhoto();
-        photoMsg.setNewPhoto(file);
+        photoMsg.setNewPhoto("", file.getFis());
         photoMsg.setChatId(channel);
 
 
@@ -90,9 +84,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    void sendDocument(String channel, String messageText, String author, java.io.File file) {
+    void sendDocument(String channel, String messageText, String author, FileHandler file) {
         SendDocument documentMsg = new SendDocument();
-        documentMsg.setNewDocument(file);
+        documentMsg.setNewDocument(file.getFileName(), file.getFis());
         documentMsg.setChatId(channel);
 
         if (messageText == null || Objects.equals(messageText, "")) {
@@ -109,7 +103,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "TeleCord_dev";
+        return botUserName;
     }
 
     @Override
@@ -117,6 +111,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return token;
     }
 
+    /*
     private InputStream checkForFile(Update update) {
 
         FileInputStream fis = null;
@@ -126,7 +121,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (getPhoto(update) != null) {
             try {
                 fis = new FileInputStream(downloadFile(getFilePath(getPhoto(update))));
-                //fis = new FileInputStream();
             } catch (FileNotFoundException | TelegramApiException e) {
                 e.printStackTrace();
             }
@@ -207,8 +201,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         return null; // Just in case
     }
-
+    */
     public interface TelegramMessageListener {
-        void onTelegramMessageReceived(Update update, InputStream fileInputStream) throws TelegramApiException, IOException;
+        void onTelegramMessageReceived(Update update, FileHandler fileInputStream) throws TelegramApiException, IOException;
     }
 }

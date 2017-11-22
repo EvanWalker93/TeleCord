@@ -9,11 +9,21 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 
-class FileReader {
+class TokenReader {
 
     //Set branch to 0 for main, 1 for dev
     private int branch = 1;
     private String token = "TEMP";
+
+    String getUserName() {
+        if (branch == 0) {
+            return "TeleCord";
+        }
+        if (branch == 1) {
+            return "TeleCord_Dev";
+        }
+        return null;
+    }
 
     String getTokens(String bot) {
         try {
