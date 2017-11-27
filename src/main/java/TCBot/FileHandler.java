@@ -8,6 +8,7 @@ import org.telegram.telegrambots.api.objects.Document;
 import org.telegram.telegrambots.api.objects.File;
 import org.telegram.telegrambots.api.objects.PhotoSize;
 import org.telegram.telegrambots.api.objects.Update;
+import org.telegram.telegrambots.api.objects.stickers.Sticker;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
@@ -69,7 +70,7 @@ public class FileHandler extends TelegramLongPollingBot {
     private String FileName(Message message) {
         return message.getAttachments().get(0).getFileName();
     }
-    
+
     //Telegram
     private FileInputStream toFileInputStream(Update update) throws IOException, TelegramApiException {
         if (update.getMessage().hasPhoto()) {
@@ -78,9 +79,13 @@ public class FileHandler extends TelegramLongPollingBot {
 
         } else if (update.getMessage().hasDocument()) {
             fis = new FileInputStream(downloadFile(getFilePath(update.getMessage().getDocument())));
+        } else if (update.getMessage().getSticker() != null) {
+            Sticker sticker = update.getMessage().getSticker();
+            fis = new FileInputStream(downloadFile(getFilePath(sticker.getFileId())));
         } else {
             return null;
         }
+
         return fis;
     }
 
@@ -89,6 +94,8 @@ public class FileHandler extends TelegramLongPollingBot {
             return update.getMessage().getDocument().getFileName();
         } else if (update.getMessage().hasPhoto()) {
             return update.getMessage().getPhoto().get(0).getFileId();
+        } else if (update.getMessage().getSticker() != null) {
+            return update.getMessage().getSticker().getFileId() + ".jpg";
         }
         return null;
     }
@@ -114,9 +121,21 @@ public class FileHandler extends TelegramLongPollingBot {
         return null; // Just in case
     }
 
+    private String getFilePath(String fileID) {
+        GetFile getFileMethod = new GetFile();
+        getFileMethod.setFileId(fileID);
+        try {
+            File file = getFile(getFileMethod);
+            return file.getFilePath();
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+        return null; // Just in case
+    }
+
     private String getFilePath(Document document) {
 
-        // We create a GetFile method and set the file_id from the photo
+        // We create a GetFile method and set the file_id from the doc
         GetFile getFileMethod = new GetFile();
         getFileMethod.setFileId(document.getFileId());
         try {

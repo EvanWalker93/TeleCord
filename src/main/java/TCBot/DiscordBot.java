@@ -41,7 +41,7 @@ public class DiscordBot extends ListenerAdapter {
         Message msg = new MessageBuilder().append(message).build();
 
         if (fis != null) {
-            messageChannel.sendFile(fis.getFis(), fileName, msg).queue();
+            messageChannel.sendFile(fis.getFis(), fis.getFileName(), msg).queue();
 
         } else {
             messageChannel.sendMessage(msg).queue();
