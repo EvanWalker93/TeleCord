@@ -1,6 +1,7 @@
 package main.java.TCBot;
 
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.requests.Requester;
 import org.apache.commons.io.FileUtils;
 import org.telegram.telegrambots.api.methods.GetFile;
 import org.telegram.telegrambots.api.objects.Document;
@@ -13,9 +14,9 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 
 public class FileHandler extends TelegramLongPollingBot {
     private FileInputStream fis;
@@ -34,16 +35,16 @@ public class FileHandler extends TelegramLongPollingBot {
         this.fileName = FileName(update);
     }
 
-    public String getFileName() {
+    String getFileName() {
         return fileName;
     }
 
-    public String getFileExtension() {
+    String getFileExtension() {
         //This may throw a null pointer exception if there is no extension
         return fileName.substring(fileName.lastIndexOf(".") + 1);
     }
 
-    public FileInputStream getFis() {
+    FileInputStream getFis() {
         return fis;
     }
 
@@ -52,33 +53,31 @@ public class FileHandler extends TelegramLongPollingBot {
 
     //Discord
     private FileInputStream toFileInputStream(Message message) throws IOException {
-        String url = message.getAttachments().get(0).getUrl();
         String tempFileName = message.getAttachments().get(0).getFileName();
+        URL url = new URL(message.getAttachments().get(0).getUrl());
+
+        URLConnection urlConnection = url.openConnection();
+        urlConnection.setRequestProperty("user-agent", Requester.USER_AGENT);
+        urlConnection.connect();
+
         java.io.File output = java.io.File.createTempFile(tempFileName, ".tmp");
-        FileUtils.copyURLToFile(new URL(url), output);
-        fis = new FileInputStream(tempFileName);
-        if (output.exists()) {
-            output.delete();
-        }
-        return fis;
+        FileUtils.copyInputStreamToFile(urlConnection.getInputStream(), output);
+
+        return fis = new FileInputStream(output);
     }
 
     private String FileName(Message message) {
         return message.getAttachments().get(0).getFileName();
     }
-
-
+    
     //Telegram
     private FileInputStream toFileInputStream(Update update) throws IOException, TelegramApiException {
-        String tempFileName;
-
         if (update.getMessage().hasPhoto()) {
-            fis = new FileInputStream(downloadFile(getFilePath(getPhoto(update))));
-            //fis = new FileInputStream(update.getMessage().getPhoto().get(0));
+            PhotoSize photo = getPhoto(update);
+            fis = new FileInputStream(downloadFile(getFilePath(photo)));
+
         } else if (update.getMessage().hasDocument()) {
-            //fis = new FileInputStream(downloadFile(getFilePath(getDocument(update))));
-            tempFileName = update.getMessage().getDocument().getFileId();
-            fis = new FileInputStream(FileUtils.getFile(tempFileName));
+            fis = new FileInputStream(downloadFile(getFilePath(update.getMessage().getDocument())));
         } else {
             return null;
         }
@@ -94,23 +93,7 @@ public class FileHandler extends TelegramLongPollingBot {
         return null;
     }
 
-    private PhotoSize getPhoto(Update update) {
-        // Check that the update contains a message and the message has a photo
-        if (update.hasMessage() && update.getMessage().hasPhoto()) {
-            // When receiving a photo, you usually get different sizes of it
-            List<PhotoSize> photos = update.getMessage().getPhoto();
-            // We fetch the bigger photo
-            return photos.stream()
-                    .sorted(Comparator.comparing(PhotoSize::getFileSize).reversed())
-                    .findFirst()
-                    .orElse(null);
-        }
-        // Return null if not found
-        return null;
-    }
-
     private String getFilePath(PhotoSize photo) {
-        Objects.requireNonNull(photo);
 
         if (photo.hasFilePath()) { // If the file_path is already present, we are done!
             System.out.println(photo.getFileId());
@@ -132,7 +115,6 @@ public class FileHandler extends TelegramLongPollingBot {
     }
 
     private String getFilePath(Document document) {
-        Objects.requireNonNull(document);
 
         // We create a GetFile method and set the file_id from the photo
         GetFile getFileMethod = new GetFile();
@@ -147,6 +129,21 @@ public class FileHandler extends TelegramLongPollingBot {
         }
 
         return null; // Just in case
+    }
+
+    private PhotoSize getPhoto(Update update) {
+        // Check that the update contains a message and the message has a photo
+        if (update.hasMessage() && update.getMessage().hasPhoto()) {
+            // When receiving a photo, you usually get different sizes of it
+            List<PhotoSize> photos = update.getMessage().getPhoto();
+            // We fetch the bigger photo
+            return photos.stream()
+                    .sorted(Comparator.comparing(PhotoSize::getFileSize).reversed())
+                    .findFirst()
+                    .orElse(null);
+        }
+        // Return null if not found
+        return null;
     }
 
     @Override

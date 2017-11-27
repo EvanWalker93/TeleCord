@@ -68,9 +68,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     //Receives a photo from Discord and sends it to Telegram
     void sendPhoto(String channel, String messageText, String author, FileHandler file) {
         SendPhoto photoMsg = new SendPhoto();
-        photoMsg.setNewPhoto("", file.getFis());
+        photoMsg.setNewPhoto(file.getFileName(), file.getFis());
+        System.out.println(file.getFis());
         photoMsg.setChatId(channel);
-
 
         if (messageText == null || Objects.equals(messageText, "")) {
             photoMsg.setCaption("File from " + author);

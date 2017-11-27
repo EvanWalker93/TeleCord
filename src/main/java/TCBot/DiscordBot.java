@@ -13,23 +13,21 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import javax.security.auth.login.LoginException;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 
 public class DiscordBot extends ListenerAdapter {
 
-    private TokenReader tokenReader = new TokenReader();
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
-    private FileInputStream fis = null;
     private FileHandler file = null;
 
     DiscordBot(DiscordMessageListener listener) throws LoginException, InterruptedException, RateLimitedException {
         this.listener = listener;
 
         jda = new AtomicReference<>();
+        TokenReader tokenReader = new TokenReader();
         String token = tokenReader.getTokens("discordToken");
         JDABuilder builder = new JDABuilder(AccountType.BOT)
                 .setToken(token);
