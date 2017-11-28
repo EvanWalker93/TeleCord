@@ -46,9 +46,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         telecordBot.startDiscordBot();
         telecordBot.startTelegramBot();
         telecordBot.db.init();
-
     }
-
 
     private void readPairedChannelsXml() {
         xStream.registerConverter(namedMapConverter);
@@ -98,8 +96,9 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         SendMessage message = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
         String author = update.getMessage().getFrom().getUserName();
         String fileName = "";
+
         if (update.getMessage().hasDocument()) {
-            fileName = update.getMessage().getDocument().getFileName();
+            fileName = file.getFileName();
         } else if (update.getMessage().hasPhoto()) {
             fileName = UUID.randomUUID().toString() + ".jpg";
         }
@@ -149,7 +148,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             default:
                 if (pairedChannels.get(channel) != null) {
                     discordBot.sendMessageToChannel(discordChannel, (author + ": " + message.getText()), file, fileName);
-                    db.addMessage(author, message.getText(), ZonedDateTime.now().toString(), channel, 1);
+                    db.addMessage(author, message.getText(), ZonedDateTime.now().toString(), channel, "Telegram", file);
                 }
         }
     }
@@ -188,7 +187,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             default:
                 if (pairedChannels.inverse().get(discordID) != null) {
                     telegramSendMessage(telegramChannel, message, author, file);
-                    db.addMessage(author, message, ZonedDateTime.now().toString(), channel.getName(), 0);
+                    db.addMessage(author, message, ZonedDateTime.now().toString(), channel.getName(), "Discord", file);
                 }
         }
     }

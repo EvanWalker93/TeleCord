@@ -1,14 +1,15 @@
 package main.java.TCBot;
 
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
-
 import org.slf4j.LoggerFactory;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
+
+import java.util.List;
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -40,9 +41,10 @@ class DatabaseHandler {
         telegramChannels = db.getCollection("telegramChannels");
     }
 
-    void addMessage(String username, String messageContent, String date, String channel, int messageOrigin) {
+    void addMessage(String username, String messageContent, String date, String channel, String messageOrigin, FileHandler file) {
       Document message = new Document("username", username)
                        .append("message_content", messageContent)
+              .append("has_file", !file.getFileName().isEmpty())
                        .append("channel", channel)
                        .append("message_origin", messageOrigin)
                        .append("date", date);
@@ -54,7 +56,6 @@ class DatabaseHandler {
     void addDiscordChannelToDB(String channelID, String telegramChannel, String discordChannel) {
 
         //If there is no Discord channel with the given id in the database, create a new entry.
-        //
         if (discordChannels.count(new Document("_id", channelID)) == 0) {
             Document channel = new Document("_id", channelID)
                     .append("password", Integer.toString(channelID.hashCode()))
@@ -77,11 +78,13 @@ class DatabaseHandler {
     void addTelegramChannelToDB(String channelID, String telegramChannel, String discordChannel) {
 
         if (telegramChannels.count(new Document("_id", channelID)) == 0) {
+            System.out.println("!!!CHANNEL ID LOG: " + channelID);
             Document channel = new Document("_id", channelID)
                     .append("password", Integer.toString(channelID.hashCode()))
                     .append("Telegram_Channels", null)
                     .append("Discord_Channels", null);
             telegramChannels.insertOne(channel);
+
         }
 
         if (telegramChannel != null) {
@@ -89,11 +92,16 @@ class DatabaseHandler {
                     new Document("$push", new Document("Telegram_Channels", telegramChannel)));
         }
         if (discordChannel != null) {
+
             telegramChannels.updateOne(eq("_id", channelID),
                     new Document("$push", new Document("Discord_Channels", discordChannel)));
         }
+    }
 
-
+    List getPairedDiscordChannels(String source, String channelID) {
+        Document document = telegramChannels.find(eq("_id", channelID)).first();
+        System.out.println(document.toString());
+        return null;
     }
 }
 
