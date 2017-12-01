@@ -31,12 +31,6 @@
         </dependency>
 
         <dependency>
-            <groupId>net.bramp.ffmpeg</groupId>
-            <artifactId>ffmpeg</artifactId>
-            <version>0.6.1</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.jdom</groupId>
             <artifactId>jdom2</artifactId>
             <version>2.0.5</version>
@@ -67,6 +61,11 @@
             <version>2.2</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.mongodb.morphia</groupId>
+            <artifactId>morphia</artifactId>
+            <version>1.0.0-rc0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.mongodb</groupId>

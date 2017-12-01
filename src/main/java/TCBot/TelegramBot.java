@@ -48,7 +48,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     void sendMessageToChannel(String channel, String messageText, String author) throws TelegramApiException {
         System.out.println("Telegram bot: Sending message to channel: " + channel);
         SendMessage message = new SendMessage().setChatId(channel).setText(author + ": " + messageText);
-        sendMessage(message);
+        execute(message);
     }
 
     void sendVideo(String channel, String messageText, String author, FileHandler file) {
