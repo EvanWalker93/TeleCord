@@ -31,8 +31,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 e.printStackTrace();
             }
         }
-
-
         //Message is sent over to the TeleCordBot for message handling logic
         try {
             listener.onTelegramMessageReceived(update, fileHandler);

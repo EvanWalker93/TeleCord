@@ -18,6 +18,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 public class FileHandler extends TelegramLongPollingBot {
     private FileInputStream fis;
@@ -85,7 +86,6 @@ public class FileHandler extends TelegramLongPollingBot {
         } else {
             return null;
         }
-
         return fis;
     }
 
@@ -93,7 +93,7 @@ public class FileHandler extends TelegramLongPollingBot {
         if (update.getMessage().hasDocument()) {
             return update.getMessage().getDocument().getFileName();
         } else if (update.getMessage().hasPhoto()) {
-            return update.getMessage().getPhoto().get(0).getFileId();
+            return UUID.randomUUID().toString() + ".jpg";
         } else if (update.getMessage().getSticker() != null) {
             return update.getMessage().getSticker().getFileId() + ".jpg";
         }
