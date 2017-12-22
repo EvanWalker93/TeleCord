@@ -19,6 +19,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String token = tokenReader.getTokens("telegramToken");
     private String botUserName = tokenReader.getUserName();
     private FileHandler fileHandler = null;
+    private String source = "Telegram";
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -109,6 +110,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public String getBotToken() {
         return token;
+    }
+
+    public String getSource() {
+        return source;
     }
 
     public interface TelegramMessageListener {

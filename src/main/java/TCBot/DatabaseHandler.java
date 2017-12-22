@@ -23,7 +23,7 @@ import java.util.List;
 class DatabaseHandler {
 
     private MongoClient mongoClient;
-    private MongoDatabase db ;
+    private MongoDatabase db;
     private String host = "45.55.214.63";
     private int port = 27017;
     private MongoCollection<Document> messages;
@@ -55,16 +55,17 @@ class DatabaseHandler {
         datastore.ensureIndexes();
     }
 
+    @Deprecated
     void addMessage(String username, String messageContent, String date, String channel, String messageOrigin, FileHandler file) {
-      Document message = new Document("username", username)
-                       .append("message_content", messageContent)
-              .append("has_file", !file.getFileName().isEmpty())
-                       .append("channel", channel)
-                       .append("message_origin", messageOrigin)
-                       .append("date", date);
-      messages.insertOne((message));
+        Document message = new Document("username", username)
+                .append("message_content", messageContent)
+                .append("has_file", !file.getFileName().isEmpty())
+                .append("channel", channel)
+                .append("message_origin", messageOrigin)
+                .append("date", date);
+        messages.insertOne((message));
 
-       System.out.println("Added Message to Database");
+        System.out.println("Added Message to Database");
     }
 
     void addMessageToDB(MessageModel message) {
@@ -85,6 +86,16 @@ class DatabaseHandler {
 
     void removeChannelFromDb(TelegramChannel telegramChannel) {
         datastore.delete(telegramChannel);
+    }
+
+    void removeChannelFromList(DiscordChannel discordChannel, String telegramChannelId) {
+        UpdateOperations<DiscordChannel> ops = datastore.createUpdateOperations(DiscordChannel.class).removeAll("telegramChannels", telegramChannelId);
+        datastore.update(discordChannel, ops);
+    }
+
+    void removeChannelFromList(TelegramChannel telegramChannel, String discordChannelId) {
+        UpdateOperations<TelegramChannel> ops = datastore.createUpdateOperations(TelegramChannel.class).removeAll("discordChannels", discordChannelId);
+        datastore.update(telegramChannel, ops);
     }
 
     Query<DiscordChannel> getDiscordChannelObj(String channelId) {

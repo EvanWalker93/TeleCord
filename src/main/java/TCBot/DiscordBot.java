@@ -22,6 +22,7 @@ public class DiscordBot extends ListenerAdapter {
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
     private FileHandler file = null;
+    private String source = "Discord";
 
     DiscordBot(DiscordMessageListener listener) throws LoginException, InterruptedException, RateLimitedException {
         this.listener = listener;
@@ -36,7 +37,7 @@ public class DiscordBot extends ListenerAdapter {
 
     }
 
-    void sendMessageToChannel(MessageChannel messageChannel, String message, FileHandler fis, String fileName) throws IOException {
+    void sendMessageToChannel(MessageChannel messageChannel, String message, FileHandler fis) throws IOException {
         System.out.println("Discord bot: Sending message to Discord");
         Message msg = new MessageBuilder().append(message).build();
 
@@ -50,36 +51,27 @@ public class DiscordBot extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
+        Message message = event.getMessage();
         System.out.println("Discord bot: Message received from Discord");
-
         //Don't respond to bots
         if (event.getAuthor().isBot()) return;
 
         //TODO Add support for editing messages
         //This will probably require using a database that keeps the unique id's for both messages
-        if (event.getMessage().isEdited()) {
-            event.getMessage().getId();
+        if (message.isEdited()) {
+            message.getId();
         }
-        //Store message content to pass to Telegram
-        Message message = event.getMessage();
-        String content = (message.getContent());
-        TextChannel channel = event.getTextChannel();
-        String userName = event.getAuthor().getName();
 
-        if (!message.getAttachments().isEmpty()) {
-            try {
-                file = new FileHandler(message);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else {
-            file = null;
+        try {
+            file = new FileHandler(message);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         //Pass the Discord message over to the TeleCordBot main class to decide how message will be handled.
         //Contains the message text, the user who sent it, the channel it was from, and any attachments.
         try {
-            listener.onDiscordMessageReceived(content, channel, userName, file);
+            listener.onDiscordMessageReceived(message, file);
         } catch (IOException | TelegramApiException e) {
             e.printStackTrace();
         }
@@ -90,8 +82,12 @@ public class DiscordBot extends ListenerAdapter {
         return getJda().getTextChannelById(channel);
     }
 
+    public String getSource() {
+        return source;
+    }
+
     public interface DiscordMessageListener {
-        void onDiscordMessageReceived(String message, TextChannel channel, String author, FileHandler attachment) throws IOException, TelegramApiException;
+        void onDiscordMessageReceived(Message message, FileHandler attachment) throws IOException, TelegramApiException;
     }
 
     private JDA getJda() {

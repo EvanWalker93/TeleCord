@@ -1,7 +1,9 @@
 package main.java.TCBot.model;
 
+import net.dv8tion.jda.core.entities.Message;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
+import org.telegram.telegrambots.api.objects.Update;
 
 import java.util.Date;
 
@@ -26,6 +28,22 @@ public class MessageModel {
         this.channel = channel;
         this.origin = origin;
         this.date = date;
+    }
+
+    public MessageModel(Message message) {
+        this.username = message.getAuthor().getName();
+        this.messageText = message.getContent();
+        this.channel = message.getTextChannel().getId();
+        this.origin = "Discord";
+        this.date = new Date();
+    }
+
+    public MessageModel(Update update) {
+        this.username = update.getMessage().getFrom().getUserName();
+        this.messageText = update.getMessage().getText();
+        this.channel = update.getMessage().getChatId().toString();
+        this.origin = "Telegram";
+        this.date = new Date();
     }
 
     public String getId() {

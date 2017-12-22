@@ -5,6 +5,7 @@ import com.google.common.collect.HashBiMap;
 import main.java.TCBot.model.DiscordChannel;
 import main.java.TCBot.model.MessageModel;
 import main.java.TCBot.model.TelegramChannel;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.TextChannel;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.telegram.telegrambots.ApiContextInitializer;
@@ -17,7 +18,6 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 
@@ -39,7 +39,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         telecordBot.startTelegramBot();
         telecordBot.db.init();
     }
-
 
     private void startTelegramBot() {
         System.out.print("Loading Telegram bot...");
@@ -76,6 +75,8 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         String messageText = message.getText();
         User user = update.getMessage().getFrom();
         String author = user.getUserName();
+
+
         if (user.getUserName() == null) {
             author = user.getFirstName() + " " + user.getLastName();
         }
@@ -115,37 +116,43 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
             case "/delink":
                 telegramReply(telegramChannelId, "The link with the Discord channel has been removed.");
-                pairedChannels.remove(telegramChannelId);
+                //db.removeChannelFromList(, );
                 break;
-
+            case "/password":
+                telegramReply(telegramChannelId, "The password is: " + db.getTelegramChannelObj(telegramChannelId).get().getPassword());
+                break;
             default:
                 if (telegramChannel.getDiscordChannels() != null) {
                     for (String discordChannels : telegramChannel.getDiscordChannels()) {
                         TextChannel discordChannel = discordBot.getChannelFromID(discordChannels);
-                        discordBot.sendMessageToChannel(discordChannel, (author + ": " + messageText), file, file.getFileName());
+                        discordBot.sendMessageToChannel(discordChannel, (author + ": " + messageText), file);
                     }
                 }
         }
     }
 
     @Override
-    public void onDiscordMessageReceived(String message, TextChannel textChannel, String author, FileHandler file) throws IOException, TelegramApiException {
-        System.out.println("TeleCord bot: Received message from Discord bot");
-        System.out.println("TeleCord bot: Channel ID: " + textChannel.getId());
+    public void onDiscordMessageReceived(Message message, FileHandler file) throws IOException, TelegramApiException {
+        TextChannel textChannel = message.getTextChannel();
+        String messageText = message.getContent();
         String discordChannelId = textChannel.getId();
-        DiscordChannel discordChannel = db.getDiscordChannelObj(textChannel.getId()).get();
+        String author = message.getAuthor().getName();
+
+        System.out.println("TeleCord bot: Received message from Discord bot");
+        System.out.println("TeleCord bot: Channel ID: " + discordChannelId);
+
+        DiscordChannel discordChannel = db.getDiscordChannelObj(discordChannelId).get();
 
         //Check if the message is linking with a password in the message
-        if (discordHandshake(message, textChannel)) {
+        if (discordHandshake(messageText, textChannel)) {
             return;
         }
 
         //Switch to decide what to do based on received message content
-        switch (message.toLowerCase()) {
-
+        switch (messageText.toLowerCase()) {
             case "/link":
                 //If the Discord channel is already in the db, fetch its password
-                if (db.getDiscordChannelObj(discordChannelId).get() != null) {
+                if (discordChannel != null) {
                     password = db.getDiscordChannelObj(discordChannelId).get().getPassword();
                     textChannel.sendMessage("Type the following password into the Telegram channel you wish to link:").queue();
                     textChannel.sendMessage("/link " + password).queue();
@@ -161,16 +168,17 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
             //TODO
             case "/delink":
                 textChannel.sendMessage("Channel has been delinked from Telegram channel ").queue();
-                pairedChannels.inverse().remove(discordChannelId);
                 break;
-
+            case "/password":
+                textChannel.sendMessage("The password is: " + db.getDiscordChannelObj(discordChannelId).get().getPassword()).queue();
+                break;
             default:
                 if (discordChannel.getTelegramChannels() != null) {
                     for (String telegramChannel : discordChannel.getTelegramChannels()) {
-                        telegramSendMessage(telegramChannel, message, author, file);
+                        telegramSendMessage(telegramChannel, messageText, author, file);
+                        telegramSendMessage(telegramChannel, messageText, author, file);
                     }
-                    Date date = new Date();
-                    MessageModel messageModel = new MessageModel(author, message, discordChannelId, "Discord", date);
+                    MessageModel messageModel = new MessageModel(message);
                     db.addMessageToDB(messageModel);
                 }
         }
