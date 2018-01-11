@@ -72,7 +72,7 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         switch (command) {
             case "/link":
                 //If the channel is not in the DB, give the channel a password and add to DB
-                if (!db.channelExists(parentChannel)) {
+                if (parentChannel == null) {
                     parentChannel = messageModel.getChannel();
                     parentChannel.setPassword(generatePassword());
                     db.addChannelToDB(parentChannel);
