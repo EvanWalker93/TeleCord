@@ -1,11 +1,13 @@
 package main.java.TCBot.model;
 
+import main.java.TCBot.FileHandler;
 import net.dv8tion.jda.core.entities.Message;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
-import org.telegram.telegrambots.api.objects.Update;
+import org.mongodb.morphia.annotations.Transient;
 
 import java.util.Date;
+import java.util.Objects;
 
 @Entity("messages")
 public class MessageModel {
@@ -13,37 +15,34 @@ public class MessageModel {
     @Id
     private String id;
     private String username;
-    private String messageText;
-    private String channel;
-    private String origin;
+    private String messageText = "";
+    //private String channelId;
     private Date date;
+    @Transient
+    private ChannelObj channel;
+    @Transient
+    private FileHandler file = new FileHandler();
 
     public MessageModel() {
-    }
-
-    public MessageModel(String username, String messageText, String channel, String origin, Date date) {
         super();
-        this.username = username;
-        this.messageText = messageText;
-        this.channel = channel;
-        this.origin = origin;
-        this.date = date;
     }
 
     public MessageModel(Message message) {
         this.username = message.getAuthor().getName();
         this.messageText = message.getContent();
-        this.channel = message.getTextChannel().getId();
-        this.origin = "Discord";
         this.date = new Date();
+
+        this.channel = new ChannelObj(message);
     }
 
-    public MessageModel(Update update) {
-        this.username = update.getMessage().getFrom().getUserName();
-        this.messageText = update.getMessage().getText();
-        this.channel = update.getMessage().getChatId().toString();
-        this.origin = "Telegram";
+    public MessageModel(org.telegram.telegrambots.api.objects.Message message) {
+        this.username = message.getFrom().getUserName();
+        if (this.username.equalsIgnoreCase("null") || this.username == null) {
+            this.username = message.getFrom().getFirstName() + " " + message.getFrom().getLastName();
+        }
+        this.messageText = message.getText();
         this.date = new Date();
+        this.channel = new ChannelObj(message);
     }
 
     public String getId() {
@@ -70,27 +69,70 @@ public class MessageModel {
         this.messageText = messageText;
     }
 
-    public String getChannel() {
-        return channel;
-    }
-
-    public void setChannel(String channel) {
-        this.channel = channel;
-    }
-
-    public String getOrigin() {
-        return origin;
-    }
-
-    public void setOrigin(String origin) {
-        this.origin = origin;
-    }
-
     public Date getDate() {
         return date;
     }
 
     public void setDate(Date date) {
         this.date = date;
+    }
+
+    public ChannelObj getChannel() {
+        return channel;
+    }
+
+    public void setChannel(ChannelObj channel) {
+        this.channel = channel;
+    }
+
+    public boolean isCommand() {
+        return messageText.replaceAll("\\s+", " ").substring(0, 1).equals("/");
+    }
+
+    public FileHandler getFile() {
+        return file;
+    }
+
+    public void setFile(FileHandler file) {
+        this.file = file;
+    }
+
+    public String getCommand() {
+        String[] split = splitCommand(messageText);
+        return split[0];
+    }
+
+    public boolean hasParameter() {
+        String[] split = splitCommand(messageText);
+        return split.length > 1;
+    }
+
+    public String getParameter() {
+        String[] split = splitCommand(messageText);
+        return split[1];
+    }
+
+    private String[] splitCommand(String messageText) {
+        return messageText.replaceAll("\\s+", " ").split(" ");
+    }
+
+    public boolean hasFile() {
+        return file.hasFile();
+    }
+
+    public String getFormattedMessageText() {
+        String messageText = this.messageText;
+        String username = this.username;
+
+        if (username == null) {
+            return messageText;
+        } else if (this.file != null) {
+            if (messageText == null || Objects.equals(messageText, "")) {
+                return ("File from " + username);
+            } else {
+                return (username + ": " + messageText);
+            }
+        }
+        return null;
     }
 }

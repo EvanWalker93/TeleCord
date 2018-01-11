@@ -13,6 +13,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -27,14 +28,17 @@ public class FileHandler extends TelegramLongPollingBot {
     private String token = tokenReader.getTokens("telegramToken");
     private String botUserName = tokenReader.getUserName();
 
-    FileHandler(Message message) throws IOException {
-        this.fis = toFileInputStream(message);
-        this.fileName = FileName(message);
+    public FileHandler() {
     }
 
-    FileHandler(Update update) throws IOException, TelegramApiException {
+    FileHandler(Message message) {
+        this.fis = toFileInputStream(message);
+        this.fileName = fileName(message);
+    }
+
+    FileHandler(Update update) {
         this.fis = toFileInputStream(update);
-        this.fileName = FileName(update);
+        this.fileName = fileName(update);
     }
 
     String getFileName() {
@@ -54,42 +58,66 @@ public class FileHandler extends TelegramLongPollingBot {
     //METHODS-----------------------------------------------------------------------------------------------------------
 
     //Discord
-    private FileInputStream toFileInputStream(Message message) throws IOException {
-        String tempFileName = message.getAttachments().get(0).getFileName();
-        URL url = new URL(message.getAttachments().get(0).getUrl());
+    private FileInputStream toFileInputStream(Message message) {
+        try {
+            String tempFileName = message.getAttachments().get(0).getFileName();
+            URL url = new URL(message.getAttachments().get(0).getUrl());
 
-        URLConnection urlConnection = url.openConnection();
-        urlConnection.setRequestProperty("user-agent", Requester.USER_AGENT);
-        urlConnection.connect();
+            URLConnection urlConnection = url.openConnection();
+            urlConnection.setRequestProperty("user-agent", Requester.USER_AGENT);
+            urlConnection.connect();
 
-        java.io.File output = java.io.File.createTempFile(tempFileName, ".tmp");
-        FileUtils.copyInputStreamToFile(urlConnection.getInputStream(), output);
+            java.io.File output = java.io.File.createTempFile(tempFileName, ".tmp");
+            FileUtils.copyInputStreamToFile(urlConnection.getInputStream(), output);
 
-        return fis = new FileInputStream(output);
+            return fis = new FileInputStream(output);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
-    private String FileName(Message message) {
+    private String fileName(Message message) {
         return message.getAttachments().get(0).getFileName();
     }
 
     //Telegram
-    private FileInputStream toFileInputStream(Update update) throws IOException, TelegramApiException {
+    private FileInputStream toFileInputStream(Update update) {
+
         if (update.getMessage().hasPhoto()) {
             PhotoSize photo = getPhoto(update);
-            fis = new FileInputStream(downloadFile(getFilePath(photo)));
+            try {
+                fis = new FileInputStream(downloadFile(getFilePath(photo)));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
 
         } else if (update.getMessage().hasDocument()) {
-            fis = new FileInputStream(downloadFile(getFilePath(update.getMessage().getDocument())));
+            try {
+                fis = new FileInputStream(downloadFile(getFilePath(update.getMessage().getDocument())));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
         } else if (update.getMessage().getSticker() != null) {
             Sticker sticker = update.getMessage().getSticker();
-            fis = new FileInputStream(downloadFile(getFilePath(sticker.getFileId())));
+            try {
+                fis = new FileInputStream(downloadFile(getFilePath(sticker.getFileId())));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
         } else {
             return null;
         }
         return fis;
     }
 
-    private String FileName(Update update) {
+    private String fileName(Update update) {
         if (update.getMessage().hasDocument()) {
             return update.getMessage().getDocument().getFileName();
         } else if (update.getMessage().hasPhoto()) {
@@ -165,9 +193,16 @@ public class FileHandler extends TelegramLongPollingBot {
         return null;
     }
 
+    public boolean hasFile() {
+        return fis != null;
+    }
+
+    public void setFis(FileInputStream fis) {
+        this.fis = fis;
+    }
+
     @Override
     public void onUpdateReceived(Update update) {
-
     }
 
     @Override

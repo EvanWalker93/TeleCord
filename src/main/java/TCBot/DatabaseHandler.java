@@ -7,14 +7,12 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import main.java.TCBot.model.DiscordChannel;
+import main.java.TCBot.model.ChannelObj;
 import main.java.TCBot.model.MessageModel;
-import main.java.TCBot.model.TelegramChannel;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
@@ -72,63 +70,46 @@ class DatabaseHandler {
         datastore.save(message);
     }
 
-    void addChannelToDB(DiscordChannel discordChannel) {
-        datastore.save(discordChannel);
+    void addChannelToDB(ChannelObj channelObj) {
+        datastore.save(channelObj);
     }
 
-    void addChannelToDB(TelegramChannel telegramChannel) {
-        datastore.save(telegramChannel);
+    void removeChannelFromDB(ChannelObj channelObj) {
+        datastore.delete(channelObj);
     }
 
-    void removeChannelFromDB(DiscordChannel discordChannel) {
-        datastore.delete(discordChannel);
+    ChannelObj getChannelObj(ChannelObj channelObj) {
+        return datastore.find(ChannelObj.class)
+                .filter("channelId =", channelObj.getChannelId())
+                .filter("source =", channelObj.getSource())
+                .get();
     }
 
-    void removeChannelFromDb(TelegramChannel telegramChannel) {
-        datastore.delete(telegramChannel);
+    ChannelObj getChannelObj(ObjectId id) {
+        return datastore.find(ChannelObj.class)
+                .filter("_id =", id)
+                .get();
     }
 
-    void removeChannelFromList(DiscordChannel discordChannel, String telegramChannelId) {
-        UpdateOperations<DiscordChannel> ops = datastore.createUpdateOperations(DiscordChannel.class).removeAll("telegramChannels", telegramChannelId);
-        datastore.update(discordChannel, ops);
+    ChannelObj getChannelFromPassword(String password) {
+        return datastore.find(ChannelObj.class)
+                .filter("password =", password)
+                .get();
     }
 
-    void removeChannelFromList(TelegramChannel telegramChannel, String discordChannelId) {
-        UpdateOperations<TelegramChannel> ops = datastore.createUpdateOperations(TelegramChannel.class).removeAll("discordChannels", discordChannelId);
-        datastore.update(telegramChannel, ops);
-    }
-
-    Query<DiscordChannel> getDiscordChannelObj(String channelId) {
-        return datastore.find(DiscordChannel.class).filter("channelId =", channelId);
-    }
-
-    Query<TelegramChannel> getTelegramChannelObj(String channelId) {
-        return datastore.find(TelegramChannel.class).filter("channelId =", channelId);
-    }
-
-    TelegramChannel getTelegramChannelFromPassword(String password) {
-        return datastore.find(TelegramChannel.class).filter("password =", password).get();
-    }
-
-    DiscordChannel getDiscordChannelFromPassword(String password) {
-        return datastore.find(DiscordChannel.class).filter("password =", password).get();
-    }
-
-    void addToDiscordList(DiscordChannel query, String addChannelId) {
-        UpdateOperations<DiscordChannel> ops = datastore.createUpdateOperations(DiscordChannel.class).add("telegramChannels", addChannelId);
-        datastore.update(query, ops);
-    }
-
-    void addToTelegramList(TelegramChannel query, String addChannelId) {
-        UpdateOperations<TelegramChannel> ops = datastore.createUpdateOperations(TelegramChannel.class).add("discordChannels", addChannelId);
-        datastore.update(query, ops);
+    boolean channelExists(ChannelObj channelObj) {
+        return datastore.find(ChannelObj.class)
+                .filter("channelId =", channelObj.getChannelId())
+                .filter("source =", channelObj.getSource())
+                .asList() != null;
     }
 
     boolean uniquePassword(String password) {
-        DiscordChannel discordChannel = datastore.find(DiscordChannel.class).filter("password =", password).get();
-        TelegramChannel telegramChannel = datastore.find(TelegramChannel.class).filter("password =", password).get();
+        ChannelObj channel = datastore.find(ChannelObj.class)
+                .filter("password =", password)
+                .get();
 
-        if (discordChannel == null && telegramChannel == null) {
+        if (channel == null) {
             System.out.println("DB: " + password + " is unique");
             return true;
         }
