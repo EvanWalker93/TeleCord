@@ -1,7 +1,5 @@
 package main.java.TCBot;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import main.java.TCBot.model.ChannelObj;
 import main.java.TCBot.model.MessageModel;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -19,8 +17,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
     private DiscordBot discordBot;
     private TelegramBot telegramBot;
     private DatabaseHandler db = new DatabaseHandler();
-    private Commands commands = new Commands();
-    private BiMap<String, String> pairedChannels = HashBiMap.create();
 
     private String password;
     private String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -42,7 +38,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         telegramBot = new TelegramBot(this);
         try {
             telegramApi.registerBot(telegramBot);
-            commands.setTelegramBot(telegramBot);
             System.out.println(" Telegram bot loaded!");
         } catch (TelegramApiException e) {
             System.out.println(" Telegram bot failed to load!");
@@ -55,7 +50,6 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
 
         try {
             discordBot = new DiscordBot(this);
-            commands.setDiscordBot(discordBot);
             System.out.println(" Discord bot loaded!");
         } catch (Exception e) {
             System.out.println(" Discord bot failed to load!");
