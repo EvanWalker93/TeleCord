@@ -11,7 +11,7 @@ import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
-import java.io.FileInputStream;
+import java.io.InputStream;
 
 public class TelegramBot extends TelegramLongPollingBot {
 
@@ -19,7 +19,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private TokenReader tokenReader = new TokenReader();
     private String token = tokenReader.getTokens("telegramToken");
     private String botUserName = tokenReader.getUserName();
-    private FileHandler fileHandler = null;
     private String source = "Telegram";
 
     @Override
@@ -27,7 +26,14 @@ public class TelegramBot extends TelegramLongPollingBot {
         System.out.println("Telegram bot: Received an update from Telegram");
         Message message = update.getMessage();
         MessageModel messageModel = new MessageModel(message);
+
+        if (message.hasPhoto() || message.hasDocument() || message.getSticker() != null) {
+            FileHandler fileHandler = new FileHandler(update);
+            messageModel.setFileHandler(fileHandler);
+        }
+
         listener.processMessage(messageModel);
+
         //GetChatAdministrators getChatAdministrators = new GetChatAdministrators();
         //getChatAdministrators.setChatId(messageModel.getChannelId());
         System.out.println(update.getMessage().getChat().getTitle());
@@ -61,8 +67,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     private void sendFile(MessageModel messageModel, String channel) throws TelegramApiException {
-        FileHandler fileHandler = messageModel.getFile();
-        FileInputStream fis = fileHandler.getFis();
+        FileHandler fileHandler = messageModel.getFileHandler();
+        InputStream fis = fileHandler.getFile();
 
         String fileName = fileHandler.getFileName();
         String extension = fileHandler.getFileExtension();

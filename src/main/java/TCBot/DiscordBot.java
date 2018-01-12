@@ -37,10 +37,10 @@ public class DiscordBot extends ListenerAdapter {
     void sendMessageToChannel(ChannelObj channelObj, MessageModel messageModel) {
         System.out.println("Discord bot: Sending message to Discord");
         TextChannel messageChannel = getChannelFromID(channelObj.getChannelId());
-        Message msg = new MessageBuilder().append(messageModel.getMessageText()).build();
+        Message msg = new MessageBuilder().append(messageModel.getFormattedMessageText()).build();
 
         if (messageModel.hasFile()) {
-            messageChannel.sendFile(messageModel.getFile().getFis(), messageModel.getFile().getFileName(), msg).queue();
+            messageChannel.sendFile(messageModel.getFileHandler().getFile(), messageModel.getFileHandler().getFileName(), msg).queue();
 
         } else {
             messageChannel.sendMessage(msg).queue();
@@ -57,7 +57,7 @@ public class DiscordBot extends ListenerAdapter {
 
         if (!message.getAttachments().isEmpty()) {
             FileHandler fileHandler = new FileHandler(message);
-            messageModel.setFile(fileHandler);
+            messageModel.setFileHandler(fileHandler);
         }
         listener.processMessage(messageModel);
 

@@ -21,7 +21,7 @@ public class MessageModel {
     @Transient
     private ChannelObj channel;
     @Transient
-    private FileHandler file = new FileHandler();
+    private FileHandler fileHandler = new FileHandler();
 
     public MessageModel() {
         super();
@@ -86,15 +86,19 @@ public class MessageModel {
     }
 
     public boolean isCommand() {
-        return messageText.replaceAll("\\s+", " ").substring(0, 1).equals("/");
+        if (messageText == null || messageText.equals("")) {
+            return false;
+        } else {
+            return messageText.replaceAll("\\s+", " ").substring(0, 1).equals("/");
+        }
     }
 
-    public FileHandler getFile() {
-        return file;
+    public FileHandler getFileHandler() {
+        return fileHandler;
     }
 
-    public void setFile(FileHandler file) {
-        this.file = file;
+    public void setFileHandler(FileHandler fileHandler) {
+        this.fileHandler = fileHandler;
     }
 
     public String getCommand() {
@@ -117,7 +121,7 @@ public class MessageModel {
     }
 
     public boolean hasFile() {
-        return file.hasFile();
+        return fileHandler.hasFile();
     }
 
     public String getFormattedMessageText() {
@@ -126,7 +130,7 @@ public class MessageModel {
 
         if (username == null) {
             return messageText;
-        } else if (this.file != null) {
+        } else if (this.fileHandler != null) {
             if (messageText == null || Objects.equals(messageText, "")) {
                 return ("File from " + username);
             } else {
