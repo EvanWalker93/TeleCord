@@ -86,17 +86,41 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                     ChannelObj childChannel = db.getChannelFromPassword(parameter);
                     childChannel.linkChannel(parentChannel.getId());
                     parentChannel.linkChannel(childChannel.getId());
+
                     db.addChannelToDB(childChannel);
                     db.addChannelToDB(parentChannel);
+
                     sendMessage(parentChannel, "The channels have been linked");
                 }
                 break;
             case "/delink":
+                if (parameter.equals("")) {
+                    sendMessage(parentChannel, "Please include the password of the channel you wish to remove.");
+                } else {
+                    //Check if the parameter is a password in the DB
+                    if (!db.uniquePassword(parameter)) {
+                        ChannelObj childChannel = db.getChannelFromPassword(parameter);
+                        childChannel.removeChannelFromList(parentChannel.getId());
+                        parentChannel.removeChannelFromList(childChannel.getId());
+
+                        db.addChannelToDB(parentChannel);
+                        db.addChannelToDB(childChannel);
+
+                        sendMessage(parentChannel, "The link to " + childChannel.getChannelName() + " has been removed.");
+                        sendMessage(childChannel, "The link to " + parentChannel.getChannelName() + " has been removed.");
+                    } else {
+                        sendMessage(parentChannel, "No channel with given password found.");
+                    }
+                }
                 break;
             case "/remove":
                 break;
             case "/password":
-                sendMessage(parentChannel, generatePassword());
+                if (parentChannel.getPassword() != null) {
+                    sendMessage(parentChannel, parentChannel.getPassword());
+                } else {
+                    sendMessage(parentChannel, "This channel has no password yet, use /link to create a password.");
+                }
                 break;
             default:
                 List<ObjectId> channels = parentChannel.getLinkedChannels();

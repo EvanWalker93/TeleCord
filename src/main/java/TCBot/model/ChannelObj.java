@@ -94,4 +94,8 @@ public class ChannelObj {
         }
         linkedChannels.add(id);
     }
+
+    public boolean removeChannelFromList(ObjectId id) {
+        return linkedChannels.remove(id);
+    }
 }

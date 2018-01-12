@@ -1,12 +1,12 @@
 <?xml version = "1.0"?>
 <class>
     <tokens branch="main">
-        <telegramToken>370672972:AAE-rF-G8HchhSipsxplWJ9m1yzr2tIF-v0</telegramToken>
-        <discordToken>MzA3OTU4OTE3MzExNDk2MTky.C-ahYw.hC1QdNoVFppzuueCTU3G-1o4FMY</discordToken>
+        <telegramToken>370672972:AAEFnwZSiTnK8IAseu7myeKW8hBEsjOAydA</telegramToken>
+        <discordToken>MzA3OTU4OTE3MzExNDk2MTky.DTqMTA.CmjG4HzZRJ_uda3tkXNTKuegirQ</discordToken>
     </tokens>
 
     <tokens branch="dev">
         <telegramToken>316767133:AAF-Mvb0OrAtHejI5pA18VeJe-JeyhP_Mag</telegramToken>
-        <discordToken>MzUxNzI0NDkzNzY2NjU2MDAy.DJwjKQ.8xqivVFqzKeA06X0TytVTinUTZY</discordToken>
+        <discordToken>MzUxNzI0NDkzNzY2NjU2MDAy.DTqMPA.VnQR_nzOMhznrKUj5HuOMQgiALg</discordToken>
     </tokens>
 </class>
