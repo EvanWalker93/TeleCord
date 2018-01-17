@@ -4,7 +4,6 @@ package main.java.TCBot;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.mongodb.MongoClient;
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import main.java.TCBot.model.ChannelObj;
@@ -15,20 +14,11 @@ import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Morphia;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-
 class DatabaseHandler {
 
-    private MongoClient mongoClient;
-    private MongoDatabase db;
     private String host = "45.55.214.63";
     private int port = 27017;
     private MongoCollection<Document> messages;
-    private MongoCollection<Document> discordChannelsCollection;
-    private MongoCollection<Document> telegramChannelsCollection;
-    private FindIterable<Document> findIterable;
-    private List<String> list = new ArrayList<>();
     private Morphia morphia = new Morphia();
     private Datastore datastore = null;
 
@@ -41,29 +31,14 @@ class DatabaseHandler {
     }
 
     void init() {
-        mongoClient = new MongoClient(host, port);
-        db = mongoClient.getDatabase("MessagesDatabase");
+        MongoClient mongoClient = new MongoClient(host, port);
+        MongoDatabase db = mongoClient.getDatabase("MessagesDatabase");
         messages = db.getCollection("messages");
-        discordChannelsCollection = db.getCollection("discordChannelsCollection");
-        telegramChannelsCollection = db.getCollection("telegramChannelsCollection");
 
         morphia.mapPackage("main.java.TCBot.model");
         datastore = morphia.createDatastore(mongoClient, db.getName());
         datastore.getDB();
         datastore.ensureIndexes();
-    }
-
-    @Deprecated
-    void addMessage(String username, String messageContent, String date, String channel, String messageOrigin, FileHandler file) {
-        Document message = new Document("username", username)
-                .append("message_content", messageContent)
-                .append("has_file", !file.getFileName().isEmpty())
-                .append("channel", channel)
-                .append("message_origin", messageOrigin)
-                .append("date", date);
-        messages.insertOne((message));
-
-        System.out.println("Added Message to Database");
     }
 
     void addMessageToDB(MessageModel message) {
@@ -75,6 +50,12 @@ class DatabaseHandler {
     }
 
     void removeChannelFromDB(ChannelObj channelObj) {
+        for (ObjectId objectId : channelObj.getLinkedChannels()) {
+            ChannelObj childChannel = getChannelObj(objectId);
+            childChannel.removeChannelFromList(channelObj.getId());
+            addChannelToDB(childChannel);
+        }
+
         datastore.delete(channelObj);
     }
 

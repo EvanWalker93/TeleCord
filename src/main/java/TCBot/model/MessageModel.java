@@ -7,7 +7,9 @@ import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.Transient;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity("messages")
 public class MessageModel {
@@ -15,13 +17,13 @@ public class MessageModel {
     @Id
     private String id;
     private String username;
-    private String messageText = "";
-    //private String channelId;
+    private boolean userIsAdmin;
+    private String messageText;
     private Date date;
-    @Transient
     private ChannelObj channel;
     @Transient
     private FileHandler fileHandler = new FileHandler();
+    private Set<MessageModel> childMessages;
 
     public MessageModel() {
         super();
@@ -31,7 +33,6 @@ public class MessageModel {
         this.username = message.getAuthor().getName();
         this.messageText = message.getContent();
         this.date = new Date();
-
         this.channel = new ChannelObj(message);
     }
 
@@ -83,6 +84,29 @@ public class MessageModel {
 
     public void setChannel(ChannelObj channel) {
         this.channel = channel;
+    }
+
+    public Set<MessageModel> getChildMessages() {
+        return childMessages;
+    }
+
+    public void setChildMessages(Set<MessageModel> childMessages) {
+        this.childMessages = childMessages;
+    }
+
+    public void addChildMessage(MessageModel messageModel) {
+        if (childMessages == null) {
+            childMessages = new HashSet<>();
+        }
+        childMessages.add(messageModel);
+    }
+
+    public boolean isUserIsAdmin() {
+        return userIsAdmin;
+    }
+
+    public void setUserIsAdmin(boolean userIsAdmin) {
+        this.userIsAdmin = userIsAdmin;
     }
 
     public boolean isCommand() {

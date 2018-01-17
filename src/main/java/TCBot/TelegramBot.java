@@ -2,10 +2,12 @@ package main.java.TCBot;
 
 import main.java.TCBot.model.ChannelObj;
 import main.java.TCBot.model.MessageModel;
+import org.telegram.telegrambots.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.api.methods.send.SendVideo;
+import org.telegram.telegrambots.api.objects.ChatMember;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -19,32 +21,31 @@ public class TelegramBot extends TelegramLongPollingBot {
     private TokenReader tokenReader = new TokenReader();
     private String token = tokenReader.getTokens("telegramToken");
     private String botUserName = tokenReader.getUserName();
-    private String source = "Telegram";
 
     @Override
     public void onUpdateReceived(Update update) {
         System.out.println("Telegram bot: Received an update from Telegram");
         Message message = update.getMessage();
         MessageModel messageModel = new MessageModel(message);
+        //messageModel.setUserIsAdmin(isAdmin(message));
 
         if (message.hasPhoto() || message.hasDocument() || message.getSticker() != null) {
             FileHandler fileHandler = new FileHandler(update);
             messageModel.setFileHandler(fileHandler);
         }
 
+        if (update.hasEditedMessage()) {
+            Message editedMessage = update.getEditedMessage();
+        }
         listener.processMessage(messageModel);
-
-        //GetChatAdministrators getChatAdministrators = new GetChatAdministrators();
-        //getChatAdministrators.setChatId(messageModel.getChannelId());
-        System.out.println(update.getMessage().getChat().getTitle());
-
     }
+
 
     TelegramBot(TelegramMessageListener listener) {
         this.listener = listener;
     }
 
-    void sendMessageToChannel(ChannelObj channelObj, MessageModel messageModel) {
+    MessageModel sendMessageToChannel(ChannelObj channelObj, MessageModel messageModel) {
         String channel = channelObj.getChannelId();
         String messageText = messageModel.getFormattedMessageText();
 
@@ -58,13 +59,30 @@ public class TelegramBot extends TelegramLongPollingBot {
             SendMessage message = new SendMessage().setChatId(channel).setText(messageText);
 
             try {
-                execute(message);
+                Message sentMessage = execute(message);
+                return new MessageModel(sentMessage);
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
         }
+        return null;
     }
 
+    private boolean isAdmin(Message message) {
+        GetChatMember getChatMember = new GetChatMember();
+        getChatMember.setChatId(message.getChatId());
+        getChatMember.setUserId(message.getFrom().getId());
+
+        ChatMember chatMember = null;
+        try {
+            chatMember = execute(getChatMember);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+
+        assert chatMember != null;
+        return chatMember.getCanDeleteMessages();
+    }
 
     private void sendFile(MessageModel messageModel, String channel) throws TelegramApiException {
         FileHandler fileHandler = messageModel.getFileHandler();
@@ -105,6 +123,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+
     @Override
     public String getBotUsername() {
         return botUserName;
@@ -113,10 +132,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public String getBotToken() {
         return token;
-    }
-
-    public String getSource() {
-        return source;
     }
 
     public interface TelegramMessageListener {

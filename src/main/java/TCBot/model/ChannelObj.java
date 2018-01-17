@@ -4,8 +4,8 @@ import net.dv8tion.jda.core.entities.Message;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity("Channel")
 @Indexes(@Index(fields = {@Field("channelId"), @Field("source")}, options = @IndexOptions(unique = true)))
@@ -17,7 +17,7 @@ public class ChannelObj {
     private String channelName;
     private String password;
     private String source;
-    private List<ObjectId> linkedChannels;
+    private Set<ObjectId> linkedChannels;
 
 
     public ChannelObj() {
@@ -80,17 +80,17 @@ public class ChannelObj {
         this.source = source;
     }
 
-    public List<ObjectId> getLinkedChannels() {
+    public Set<ObjectId> getLinkedChannels() {
         return linkedChannels;
     }
 
-    public void setLinkedChannels(List<ObjectId> linkedChannels) {
+    public void setLinkedChannels(Set<ObjectId> linkedChannels) {
         this.linkedChannels = linkedChannels;
     }
 
     public void linkChannel(ObjectId id) {
         if (linkedChannels == null) {
-            this.linkedChannels = new ArrayList<>();
+            this.linkedChannels = new HashSet<>();
         }
         linkedChannels.add(id);
     }

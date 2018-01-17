@@ -34,7 +34,7 @@ public class DiscordBot extends ListenerAdapter {
 
     }
 
-    void sendMessageToChannel(ChannelObj channelObj, MessageModel messageModel) {
+    MessageModel sendMessageToChannel(ChannelObj channelObj, MessageModel messageModel) {
         System.out.println("Discord bot: Sending message to Discord");
         TextChannel messageChannel = getChannelFromID(channelObj.getChannelId());
         Message msg = new MessageBuilder().append(messageModel.getFormattedMessageText()).build();
@@ -43,8 +43,11 @@ public class DiscordBot extends ListenerAdapter {
             messageChannel.sendFile(messageModel.getFileHandler().getFile(), messageModel.getFileHandler().getFileName(), msg).queue();
 
         } else {
-            messageChannel.sendMessage(msg).queue();
+            //TODO use .complete to sendToLinks and return the message to get the id for editing
+            Message returnMessage = messageChannel.sendMessage(msg).complete();
+            return new MessageModel(returnMessage);
         }
+        return null;
     }
 
     @Override
