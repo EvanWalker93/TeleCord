@@ -7,6 +7,7 @@ import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.api.methods.send.SendVideo;
+import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.ChatMember;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
@@ -40,6 +41,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         listener.processMessage(messageModel);
     }
 
+    void updateMessage(MessageModel editedMessage) {
+        EditMessageText editMessage = new EditMessageText();
+        editMessage.setChatId(editedMessage.getChannel().getChannelId())
+                .setMessageId(Integer.parseInt(editedMessage.getMessageId()))
+                .setText(editedMessage.getFormattedMessageText());
+
+        try {
+            execute(editMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 
     TelegramBot(TelegramMessageListener listener) {
         this.listener = listener;

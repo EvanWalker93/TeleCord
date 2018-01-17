@@ -47,7 +47,14 @@ public class DiscordBot extends ListenerAdapter {
             Message returnMessage = messageChannel.sendMessage(msg).complete();
             return new MessageModel(returnMessage);
         }
+
         return null;
+    }
+
+    void updateMessage(MessageModel editedMessage) {
+        Message updateMessage = new MessageBuilder().append(editedMessage.getFormattedMessageText()).build();
+        TextChannel textChannel = getChannelFromID(editedMessage.getChannel().getChannelId());
+        textChannel.editMessageById(editedMessage.getMessageId(), editedMessage.getFormattedMessageText()).queue();
     }
 
     @Override
