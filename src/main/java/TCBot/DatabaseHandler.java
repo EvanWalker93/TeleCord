@@ -6,13 +6,15 @@ import ch.qos.logback.classic.Logger;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import main.java.TCBot.model.ChannelObj;
+import main.java.TCBot.model.channel.AbstractChannel;
 import main.java.TCBot.model.MessageModel;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Morphia;
 import org.slf4j.LoggerFactory;
+
+import javax.xml.crypto.Data;
 
 class DatabaseHandler {
 
@@ -41,52 +43,53 @@ class DatabaseHandler {
         datastore.ensureIndexes();
     }
 
+
     void addMessageToDB(MessageModel message) {
         datastore.save(message);
     }
 
-    void addChannelToDB(ChannelObj channelObj) {
-        datastore.save(channelObj);
+    void addChannelToDB(AbstractChannel abstractChannel) {
+        datastore.save(abstractChannel);
     }
 
-    void removeChannelFromDB(ChannelObj channelObj) {
-        for (ObjectId objectId : channelObj.getLinkedChannels()) {
-            ChannelObj childChannel = getChannelObj(objectId);
-            childChannel.removeChannelFromList(channelObj.getId());
+    void removeChannelFromDB(AbstractChannel abstractChannel) {
+        for (ObjectId objectId : abstractChannel.getLinkedChannels()) {
+            AbstractChannel childChannel = getChannelObj(objectId);
+            childChannel.removeChannelFromList(abstractChannel.getId());
             addChannelToDB(childChannel);
         }
 
-        datastore.delete(channelObj);
+        datastore.delete(abstractChannel);
     }
 
-    ChannelObj getChannelObj(ChannelObj channelObj) {
-        return datastore.find(ChannelObj.class)
-                .filter("channelId =", channelObj.getChannelId())
-                .filter("source =", channelObj.getSource())
+    AbstractChannel getChannelObj(AbstractChannel abstractChannel) {
+        return datastore.find(AbstractChannel.class)
+                .filter("channelId =", abstractChannel.getChannelId())
+                .filter("source =", abstractChannel.getSource())
                 .get();
     }
 
-    ChannelObj getChannelObj(ObjectId id) {
-        return datastore.find(ChannelObj.class)
+    AbstractChannel getChannelObj(ObjectId id) {
+        return datastore.find(AbstractChannel.class)
                 .filter("_id =", id)
                 .get();
     }
 
-    ChannelObj getChannelFromPassword(String password) {
-        return datastore.find(ChannelObj.class)
+    AbstractChannel getChannelFromPassword(String password) {
+        return datastore.find(AbstractChannel.class)
                 .filter("password =", password)
                 .get();
     }
 
-    boolean channelExists(ChannelObj channelObj) {
-        return datastore.find(ChannelObj.class)
-                .filter("channelId =", channelObj.getChannelId())
-                .filter("source =", channelObj.getSource())
+    boolean channelExists(AbstractChannel abstractChannel) {
+        return datastore.find(AbstractChannel.class)
+                .filter("channelId =", abstractChannel.getChannelId())
+                .filter("source =", abstractChannel.getSource())
                 .asList() != null;
     }
 
     boolean uniquePassword(String password) {
-        ChannelObj channel = datastore.find(ChannelObj.class)
+        AbstractChannel channel = datastore.find(AbstractChannel.class)
                 .filter("password =", password)
                 .get();
 

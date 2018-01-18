@@ -1,6 +1,6 @@
 package main.java.TCBot;
 
-import main.java.TCBot.model.ChannelObj;
+import main.java.TCBot.model.channel.AbstractChannel;
 import main.java.TCBot.model.MessageModel;
 import org.telegram.telegrambots.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.api.methods.send.SendDocument;
@@ -58,8 +58,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.listener = listener;
     }
 
-    MessageModel sendMessageToChannel(ChannelObj channelObj, MessageModel messageModel) {
-        String channel = channelObj.getChannelId();
+    MessageModel sendMessageToChannel(AbstractChannel abstractChannel, MessageModel messageModel) {
+        String channel = abstractChannel.getChannelId();
         String messageText = messageModel.getFormattedMessageText();
 
         if (messageModel.hasFile()) {

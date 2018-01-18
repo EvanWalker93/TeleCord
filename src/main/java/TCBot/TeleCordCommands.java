@@ -1,7 +1,9 @@
 package main.java.TCBot;
 
-import main.java.TCBot.model.ChannelObj;
+import main.java.TCBot.model.channel.AbstractChannel;
 import main.java.TCBot.model.MessageModel;
+import main.java.TCBot.model.channel.DiscordChannel;
+import main.java.TCBot.model.channel.TelegramChannel;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bson.types.ObjectId;
 
@@ -21,7 +23,7 @@ class TeleCordCommands {
     }
 
     void link(MessageModel messageModel) {
-        ChannelObj parentChannel = db.getChannelObj(messageModel.getChannel());
+        AbstractChannel parentChannel = db.getChannelObj(messageModel.getChannel());
 
         if (messageModel.hasParameter()) {
             parameter = messageModel.getParameter();
@@ -38,7 +40,7 @@ class TeleCordCommands {
             sendMessage(parentChannel, "Type the following into the channel to link");
             sendMessage(parentChannel, "/link " + parentChannel.getPassword());
         } else {
-            ChannelObj childChannel = db.getChannelFromPassword(parameter);
+            AbstractChannel childChannel = db.getChannelFromPassword(parameter);
             childChannel.linkChannel(parentChannel.getId());
             parentChannel.linkChannel(childChannel.getId());
 
@@ -50,14 +52,14 @@ class TeleCordCommands {
     }
 
     void delink(MessageModel messageModel) {
-        ChannelObj parentChannel = db.getChannelObj(messageModel.getChannel());
+        AbstractChannel parentChannel = db.getChannelObj(messageModel.getChannel());
 
         if (parameter.equals("")) {
             sendMessage(parentChannel, "Please include the password of the channel you wish to remove.");
         } else {
             //Check if the parameter is a password in the DB
             if (!db.uniquePassword(parameter)) {
-                ChannelObj childChannel = db.getChannelFromPassword(parameter);
+                AbstractChannel childChannel = db.getChannelFromPassword(parameter);
                 childChannel.removeChannelFromList(parentChannel.getId());
                 parentChannel.removeChannelFromList(childChannel.getId());
 
@@ -73,13 +75,13 @@ class TeleCordCommands {
     }
 
     void remove(MessageModel messageModel) {
-        ChannelObj parentChannel = db.getChannelObj(messageModel.getChannel());
+        AbstractChannel parentChannel = db.getChannelObj(messageModel.getChannel());
         sendMessage(parentChannel, "All channel pairings have been removed");
         db.removeChannelFromDB(parentChannel);
     }
 
     void password(MessageModel messageModel) {
-        ChannelObj parentChannel = db.getChannelObj(messageModel.getChannel());
+        AbstractChannel parentChannel = db.getChannelObj(messageModel.getChannel());
 
         if (parentChannel.getPassword() != null) {
             sendMessage(parentChannel, parentChannel.getPassword());
@@ -89,32 +91,32 @@ class TeleCordCommands {
     }
 
     void sendToLinks(MessageModel parentMessage) {
-        ChannelObj parentChannel = db.getChannelObj(parentMessage.getChannel());
-        Set<ObjectId> channels = parentChannel.getLinkedChannels();
+        AbstractChannel parentChannel = db.getChannelObj(parentMessage.getChannel());
+        Set<ObjectId> channelObjectIds = parentChannel.getLinkedChannels();
 
-        for (ObjectId channel : channels) {
-            ChannelObj channelObj = db.getChannelObj(channel);
-            parentMessage.addChildMessage(sendMessage(channelObj, parentMessage));
+        for (ObjectId channelObjectId : channelObjectIds) {
+            AbstractChannel abstractChannel = db.getChannelObj(channelObjectId);
+            parentMessage.addChildMessage(sendMessage(abstractChannel, parentMessage));
         }
         db.addMessageToDB(parentMessage);
     }
 
-    private MessageModel sendMessage(ChannelObj targetChannel, MessageModel messageModel) {
-        if (targetChannel.getSource().equalsIgnoreCase("discord")) {
+    private MessageModel sendMessage(AbstractChannel targetChannel, MessageModel messageModel) {
+        if (targetChannel instanceof DiscordChannel) {
             return discordBot.sendMessageToChannel(targetChannel, messageModel);
-        } else if (targetChannel.getSource().equalsIgnoreCase("telegram")) {
+        } else if (targetChannel instanceof TelegramChannel) {
             return telegramBot.sendMessageToChannel(targetChannel, messageModel);
         }
         return null;
     }
 
-    private void sendMessage(ChannelObj targetChannel, String messageText) {
+    private void sendMessage(AbstractChannel targetChannel, String messageText) {
         MessageModel messageModel = new MessageModel();
         messageModel.setMessageText(messageText);
 
-        if (targetChannel.getSource().equalsIgnoreCase("discord")) {
+        if (targetChannel instanceof DiscordChannel) {
             discordBot.sendMessageToChannel(targetChannel, messageModel);
-        } else if (targetChannel.getSource().equalsIgnoreCase("telegram")) {
+        } else if (targetChannel instanceof TelegramChannel) {
             telegramBot.sendMessageToChannel(targetChannel, messageModel);
         }
     }

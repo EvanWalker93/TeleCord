@@ -1,6 +1,9 @@
 package main.java.TCBot.model;
 
 import main.java.TCBot.FileHandler;
+import main.java.TCBot.model.channel.AbstractChannel;
+import main.java.TCBot.model.channel.DiscordChannel;
+import main.java.TCBot.model.channel.TelegramChannel;
 import net.dv8tion.jda.core.entities.Message;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Entity;
@@ -22,7 +25,7 @@ public class MessageModel {
     private boolean userIsAdmin;
     private String messageText;
     private Date date;
-    private ChannelObj channel;
+    private AbstractChannel channel;
     @Transient
     private FileHandler fileHandler = new FileHandler();
     private Set<MessageModel> childMessages;
@@ -35,7 +38,7 @@ public class MessageModel {
         this.username = message.getAuthor().getName();
         this.messageText = message.getContent();
         this.date = new Date();
-        this.channel = new ChannelObj(message);
+        this.channel = new DiscordChannel(message);
         this.messageId = message.getId();
     }
 
@@ -46,7 +49,7 @@ public class MessageModel {
         }
         this.messageText = message.getText();
         this.date = new Date();
-        this.channel = new ChannelObj(message);
+        this.channel = new TelegramChannel(message);
         this.messageId = message.getMessageId().toString();
     }
 
@@ -90,11 +93,11 @@ public class MessageModel {
         this.messageId = messageId;
     }
 
-    public ChannelObj getChannel() {
+    public AbstractChannel getChannel() {
         return channel;
     }
 
-    public void setChannel(ChannelObj channel) {
+    public void setChannel(AbstractChannel channel) {
         this.channel = channel;
     }
 
