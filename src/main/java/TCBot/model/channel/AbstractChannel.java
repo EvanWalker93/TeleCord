@@ -1,5 +1,6 @@
-package main.java.TCBot.model;
+package main.java.TCBot.model.channel;
 
+import main.java.TCBot.model.MessageModel;
 import net.dv8tion.jda.core.entities.Message;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.*;
@@ -9,36 +10,16 @@ import java.util.Set;
 
 @Entity("Channel")
 @Indexes(@Index(fields = {@Field("channelId"), @Field("source")}, options = @IndexOptions(unique = true)))
-public class ChannelObj {
+public abstract class AbstractChannel {
 
     @Id
     private ObjectId id;
-    private String channelId;
-    private String channelName;
+    protected String channelId;
+    protected String channelName;
     private String password;
     private String source;
     private Set<ObjectId> linkedChannels;
 
-
-    public ChannelObj() {
-        super();
-    }
-
-    public ChannelObj(String channelId) {
-        this.channelId = channelId;
-    }
-
-    ChannelObj(Message message) {
-        this.channelId = message.getTextChannel().getId();
-        this.channelName = message.getTextChannel().getName();
-        this.source = "Discord";
-    }
-
-    ChannelObj(org.telegram.telegrambots.api.objects.Message message) {
-        this.channelId = message.getChatId().toString();
-        this.channelName = message.getChat().getTitle();
-        this.source = "Telegram";
-    }
 
     public ObjectId getId() {
         return id;

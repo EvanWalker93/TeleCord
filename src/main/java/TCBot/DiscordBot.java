@@ -1,6 +1,6 @@
 package main.java.TCBot;
 
-import main.java.TCBot.model.ChannelObj;
+import main.java.TCBot.model.channel.AbstractChannel;
 import main.java.TCBot.model.MessageModel;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
@@ -35,9 +35,9 @@ public class DiscordBot extends ListenerAdapter {
 
     }
 
-    MessageModel sendMessageToChannel(ChannelObj channelObj, MessageModel messageModel) {
+    MessageModel sendMessageToChannel(AbstractChannel abstractChannel, MessageModel messageModel) {
         System.out.println("Discord bot: Sending message to Discord");
-        TextChannel messageChannel = getChannelFromID(channelObj.getChannelId());
+        TextChannel messageChannel = getChannelFromID(abstractChannel.getChannelId());
         Message msg = new MessageBuilder().append(messageModel.getFormattedMessageText()).build();
 
         if (messageModel.hasFile()) {
