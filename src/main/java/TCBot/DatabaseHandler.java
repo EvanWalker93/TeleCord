@@ -38,7 +38,7 @@ class DatabaseHandler {
         morphia.mapPackage("main.java.TCBot.model");
         datastore = morphia.createDatastore(mongoClient, db.getName());
         datastore.getDB();
-        datastore.ensureIndexes();
+        //datastore.ensureIndexes();
     }
 
     void addMessageToDB(MessageModel message) {
@@ -47,6 +47,13 @@ class DatabaseHandler {
 
     void addChannelToDB(ChannelObj channelObj) {
         datastore.save(channelObj);
+    }
+
+    MessageModel getMessage(MessageModel messageModel){
+        return datastore.find(MessageModel.class)
+                .filter("messageId =", messageModel.getMessageId())
+                .filter("channel =", messageModel.getChannel())
+                .get();
     }
 
     void removeChannelFromDB(ChannelObj channelObj) {

@@ -9,6 +9,7 @@ import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
@@ -52,9 +53,18 @@ public class DiscordBot extends ListenerAdapter {
     }
 
     void updateMessage(MessageModel editedMessage) {
-        Message updateMessage = new MessageBuilder().append(editedMessage.getFormattedMessageText()).build();
+        //Message updateMessage = new MessageBuilder().append(editedMessage.getFormattedMessageText()).build();
         TextChannel textChannel = getChannelFromID(editedMessage.getChannel().getChannelId());
-        textChannel.editMessageById(editedMessage.getMessageId(), editedMessage.getFormattedMessageText()).queue();
+        textChannel.editMessageById(editedMessage.getMessageId(), editedMessage.getMessageText()).queue();
+    }
+
+    @Override
+    public void onMessageUpdate(MessageUpdateEvent event){
+        if(!event.getAuthor().isBot()){
+            Message message = event.getMessage();
+            MessageModel messageModel = new MessageModel(message);
+            listener.updateMessage(messageModel);
+        }
     }
 
     @Override
@@ -69,19 +79,7 @@ public class DiscordBot extends ListenerAdapter {
             FileHandler fileHandler = new FileHandler(message);
             messageModel.setFileHandler(fileHandler);
         }
-        listener.processMessage(messageModel);
-
-        //----------------------------------------
-
-        System.out.println("Discord bot: Message received from Discord");
-        //Don't respond to bots
-
-
-        //TODO Add support for editing messages
-        //This will probably require using a database that keeps the unique id's for both messages
-        if (message.isEdited()) {
-            message.getId();
-        }
+            listener.processMessage(messageModel);
     }
 
     private TextChannel getChannelFromID(String channel) {
@@ -95,6 +93,7 @@ public class DiscordBot extends ListenerAdapter {
 
     public interface DiscordMessageListener {
         void processMessage(MessageModel messageModel);
+        void updateMessage(MessageModel messageModel);
     }
 
     private JDA getJda() {

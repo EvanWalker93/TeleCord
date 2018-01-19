@@ -26,26 +26,35 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         System.out.println("Telegram bot: Received an update from Telegram");
-        Message message = update.getMessage();
-        MessageModel messageModel = new MessageModel(message);
-        //messageModel.setUserIsAdmin(isAdmin(message));
-
-        if (message.hasPhoto() || message.hasDocument() || message.getSticker() != null) {
-            FileHandler fileHandler = new FileHandler(update);
-            messageModel.setFileHandler(fileHandler);
-        }
+        Message message = null;
+        MessageModel messageModel = null;
 
         if (update.hasEditedMessage()) {
-            Message editedMessage = update.getEditedMessage();
+            MessageModel editedMessage = new MessageModel(update.getEditedMessage());
+            listener.updateMessage(editedMessage);
+
         }
-        listener.processMessage(messageModel);
+        else{
+            message = update.getMessage();
+            messageModel = new MessageModel(message);
+
+            if (message.hasPhoto() || message.hasDocument() || message.getSticker() != null) {
+                FileHandler fileHandler = new FileHandler(update);
+                messageModel.setFileHandler(fileHandler);
+            }
+            listener.processMessage(messageModel);
+        }
+
+        //messageModel.setUserIsAdmin(isAdmin(message));
+
+
     }
 
     void updateMessage(MessageModel editedMessage) {
         EditMessageText editMessage = new EditMessageText();
         editMessage.setChatId(editedMessage.getChannel().getChannelId())
                 .setMessageId(Integer.parseInt(editedMessage.getMessageId()))
-                .setText(editedMessage.getFormattedMessageText());
+                .setText(editedMessage.getMessageText());
 
         try {
             execute(editMessage);
@@ -102,11 +111,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         InputStream fis = fileHandler.getFile();
 
         String fileName = fileHandler.getFileName();
-        String extension = fileHandler.getFileExtension();
+        String extension = fileHandler.getFileExtension().toLowerCase();
         String messageText = messageModel.getFormattedMessageText();
 
         switch (extension) {
             case "jpg":
+            case "jpeg":
             case "png":
                 SendPhoto Photo = new SendPhoto()
                         .setChatId(channel)
@@ -149,5 +159,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     public interface TelegramMessageListener {
         void processMessage(MessageModel messageModel);
+        void updateMessage(MessageModel messageModel);
     }
 }
