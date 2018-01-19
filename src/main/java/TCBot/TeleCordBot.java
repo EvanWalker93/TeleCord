@@ -90,5 +90,19 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
                 break;
         }
     }
+
+    public void updateMessage(MessageModel messageModel){
+        MessageModel editedMessage = db.getMessage(messageModel);
+        for(MessageModel newMessage : editedMessage.getChildMessages()){
+            newMessage.setMessageText(messageModel.getFormattedMessageText());
+
+            if(newMessage.getChannel().getSource().equalsIgnoreCase("telegram")){
+                telegramBot.updateMessage(newMessage);
+            }
+            else if(newMessage.getChannel().getSource().equalsIgnoreCase("discord")){
+                discordBot.updateMessage(newMessage);
+            }
+        }
+    }
 }
 

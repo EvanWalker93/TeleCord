@@ -6,9 +6,7 @@ import main.java.TCBot.model.channel.DiscordChannel;
 import main.java.TCBot.model.channel.TelegramChannel;
 import net.dv8tion.jda.core.entities.Message;
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
+import org.mongodb.morphia.annotations.*;
 
 import java.util.Date;
 import java.util.HashSet;
@@ -16,6 +14,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity("messages")
+
 public class MessageModel {
 
     @Id
@@ -25,6 +24,7 @@ public class MessageModel {
     private boolean userIsAdmin;
     private String messageText;
     private Date date;
+    @Indexed(unique = false)
     private AbstractChannel channel;
     @Transient
     private FileHandler fileHandler = new FileHandler();
@@ -47,7 +47,14 @@ public class MessageModel {
         if (this.username.equalsIgnoreCase("null") || this.username == null) {
             this.username = message.getFrom().getFirstName() + " " + message.getFrom().getLastName();
         }
-        this.messageText = message.getText();
+
+        if(message.getCaption() != null){
+            this.messageText = message.getCaption();
+        }
+        else{
+            this.messageText = message.getText();
+        }
+
         this.date = new Date();
         this.channel = new TelegramChannel(message);
         this.messageId = message.getMessageId().toString();
