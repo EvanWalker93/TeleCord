@@ -1,113 +1,172 @@
-package main.java.TCBot;
+package TCBot;
 
-import org.telegram.telegrambots.api.methods.GetFile;
+import TCBot.model.ChannelObj;
+import TCBot.model.MessageModel;
+import org.telegram.telegrambots.api.methods.groupadministration.GetChatMember;
+import org.telegram.telegrambots.api.methods.send.SendDocument;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
-import org.telegram.telegrambots.api.objects.File;
-import org.telegram.telegrambots.api.objects.PhotoSize;
+import org.telegram.telegrambots.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.api.methods.send.SendVideo;
+import org.telegram.telegrambots.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.api.objects.ChatMember;
+import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.io.InputStream;
 
 public class TelegramBot extends TelegramLongPollingBot {
 
     private TelegramMessageListener listener;
 
+    private String token = TeleCordProps.getInstance().getProperty("telegramBotToken");
+    private String botUserName = TeleCordProps.getInstance().getProperty("telegramBotUsername");
 
-    public interface TelegramMessageListener {
-        void onTelegramMessageReceived(SendMessage message, String channel, String author) throws TelegramApiException, IOException;
+    @Override
+    public void onUpdateReceived(Update update) {
+        Message message = null;
+        MessageModel messageModel = null;
+
+        if (update.hasEditedMessage()) {
+            MessageModel editedMessage = new MessageModel(update.getEditedMessage());
+            listener.updateMessage(editedMessage);
+
+        }
+        else{
+            message = update.getMessage();
+            messageModel = new MessageModel(message);
+
+            if (message.hasPhoto() || message.hasDocument() || message.getSticker() != null) {
+                FileHandler fileHandler = new FileHandler(update);
+                messageModel.setFileHandler(fileHandler);
+            }
+            listener.processMessage(messageModel);
+        }
+    }
+
+    void updateMessage(MessageModel editedMessage) {
+        EditMessageText editMessage = new EditMessageText();
+        editMessage.setChatId(editedMessage.getChannel().getChannelId())
+                .setMessageId(Integer.parseInt(editedMessage.getMessageId()))
+                .setText(editedMessage.getMessageText());
+
+        try {
+            execute(editMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void deleteMessage(MessageModel messageModel){
+        DeleteMessage deleteMessage = new DeleteMessage();
+        deleteMessage.setChatId(messageModel.getChannel().getChannelId());
+        deleteMessage.setMessageId(Integer.parseInt(messageModel.getMessageId()));
+
+        try{
+            execute(deleteMessage);
+        }catch (TelegramApiException e){
+            e.printStackTrace();
+        }
+    }
+
+    MessageModel sendMessageToChannel(ChannelObj channelObj, MessageModel messageModel) {
+        System.out.println("Telegram Bot: Sending Message to Telegram");
+        String channel = channelObj.getChannelId();
+        String messageText = messageModel.getFormattedMessageText();
+
+        if (messageModel.hasFile()) {
+            try {
+                return new MessageModel(sendFile(messageModel, channel));
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        } else {
+            SendMessage message = new SendMessage()
+                    .setChatId(channel)
+                    .setText(messageText);
+            try {
+                Message sentMessage = execute(message);
+                return new MessageModel(sentMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    boolean isAdmin(MessageModel message) {
+        GetChatMember getChatMember = new GetChatMember();
+        getChatMember.setChatId(message.getChannel().getChannelId());
+        getChatMember.setUserId(Integer.parseInt(message.getUser().getUserId()));
+
+        ChatMember chatMember = null;
+        try {
+            chatMember = execute(getChatMember);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+
+        assert chatMember != null;
+
+        String status = chatMember.getStatus();
+        return status.equalsIgnoreCase("creator") || status.equalsIgnoreCase("administrator");
+    }
+
+    private Message sendFile(MessageModel messageModel, String channel) throws TelegramApiException {
+        FileHandler fileHandler = messageModel.getFileHandler();
+        InputStream fis = fileHandler.getFile();
+
+        String fileName = fileHandler.getFileName();
+        String extension = fileHandler.getFileExtension().toLowerCase();
+        String messageText = messageModel.getFormattedMessageText();
+
+        switch (extension) {
+            case "jpg":
+            case "jpeg":
+            case "png":
+                SendPhoto Photo = new SendPhoto()
+                        .setChatId(channel)
+                        .setNewPhoto(fileName, fis)
+                        .setCaption(messageText);
+
+                return sendPhoto(Photo);
+            case "mp4":
+            case "webm":
+            case "gif":
+                SendVideo video = new SendVideo()
+                        .setChatId(channel)
+                        .setNewVideo(fileName, fis)
+                        .setCaption(messageText);
+
+                return sendVideo(video);
+            default:
+                SendDocument document = new SendDocument()
+                        .setChatId(channel)
+                        .setNewDocument(fileName, fis)
+                        .setCaption(messageText);
+
+                return sendDocument(document);
+        }
     }
 
     TelegramBot(TelegramMessageListener listener) {
         this.listener = listener;
     }
 
-
     @Override
     public String getBotUsername() {
-        return "TeleCord";
+        return botUserName;
     }
 
     @Override
     public String getBotToken() {
-        return "";
+        return token;
     }
 
-    @Override
-    public void onUpdateReceived(Update update) {
-        System.out.println("Telegram update received...");
-
-        SendMessage newMessage = new SendMessage().setChatId(update.getMessage().getChatId()).setText(update.getMessage().getText());
-        String channel = update.getMessage().getChatId().toString();
-        String username =  update.getMessage().getFrom().getUserName();
-
-        try {
-            listener.onTelegramMessageReceived(newMessage, channel, username);
-            System.out.println("Sending message to TeleCordBot");
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public interface TelegramMessageListener {
+        void processMessage(MessageModel messageModel);
+        void updateMessage(MessageModel messageModel);
     }
-
-    public PhotoSize getPhoto(Update update) {
-        // Check that the update contains a message and the message has a photo
-        if (update.hasMessage() && update.getMessage().hasPhoto()) {
-            // When receiving a photo, you usually get different sizes of it
-            List<PhotoSize> photos = update.getMessage().getPhoto();
-
-            // We fetch the bigger photo
-            return photos.stream()
-                    .sorted(Comparator.comparing(PhotoSize::getFileSize).reversed())
-                    .findFirst()
-                    .orElse(null);
-        }
-        // Return null if not found
-        return null;
-    }
-
-    public String getFilePath(PhotoSize photo) {
-        Objects.requireNonNull(photo);
-
-        if (photo.hasFilePath()) { // If the file_path is already present, we are done!
-            return photo.getFilePath();
-        } else { // If not, let find it
-            // We create a GetFile method and set the file_id from the photo
-            GetFile getFileMethod = new GetFile();
-            getFileMethod.setFileId(photo.getFileId());
-            try {
-                // We execute the method using AbsSender::getFile method.
-                File file = getFile(getFileMethod);
-                // We now have the file_path
-                return file.getFilePath();
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-        }
-
-        return null; // Just in case
-    }
-
-    public java.io.File downloadPhotoByFilePath(String filePath) {
-        try {
-            // Download the file calling AbsSender::downloadFile method
-            return downloadFile(filePath);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    void sendMessageToChannelWithText(String channel, String messageText, String author) throws TelegramApiException {
-        System.out.println("SendMessageToChannelWithText, channel: " + channel);
-        SendMessage message = new SendMessage().setChatId(channel).setText(author + ": " + messageText);
-        sendMessage(message);
-    }
-
 }

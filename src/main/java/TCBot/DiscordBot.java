@@ -1,87 +1,128 @@
-package main.java.TCBot;
+package TCBot;
 
-import net.dv8tion.jda.core.AccountType;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.TextChannel;
+import TCBot.model.ChannelObj;
+import TCBot.model.MessageModel;
+import net.dv8tion.jda.core.*;
+import net.dv8tion.jda.core.entities.*;
+import net.dv8tion.jda.core.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import org.telegram.telegrambots.exceptions.TelegramApiException;
 
-import java.io.IOException;
+import javax.security.auth.login.LoginException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.security.auth.login.LoginException;
 
-/**
- * Created by Evan on 5/3/2017.
- *
- */
 public class DiscordBot extends ListenerAdapter {
 
-    private static final String DISCORD_KEY = "";
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
-
-
-    public interface DiscordMessageListener{
-        void onDiscordMessageReceived(String message, TextChannel channel, String author, List<Message.Attachment> attachment) throws IOException, TelegramApiException;
-    }
+    private final String DISCORD = "Discord";
 
     DiscordBot(DiscordMessageListener listener) throws LoginException, InterruptedException, RateLimitedException {
         this.listener = listener;
 
         jda = new AtomicReference<>();
+        String token = TeleCordProps.getInstance().getProperty("discordBotToken");
         JDABuilder builder = new JDABuilder(AccountType.BOT)
-                .setToken(DISCORD_KEY);
+                .setToken(token);
         jda.set(builder.buildBlocking());
         jda.get().addEventListener(this);
 
     }
 
-    void sendMessageToChannelWithText(MessageChannel messageChannel, String message){
-        System.out.println("Displaying message from Telegram on Discord, message and channel" + message + messageChannel.toString());
-        messageChannel.sendMessage(message).queue();
+    MessageModel sendMessageToChannel(ChannelObj channelObj, MessageModel messageModel) {
+        System.out.println("Discord bot: Sending message to Discord");
+        TextChannel messageChannel = getChannelFromID(channelObj.getChannelId());
+        Message msg = new MessageBuilder().append(messageModel.getFormattedMessageText()).build();
 
-
-
-        }
-
-    @Override
-    public void onMessageReceived(MessageReceivedEvent event) {
-        //Don't respond to bots
-        if (event.getAuthor().isBot()) return;
-
-        //Store message content in String content
-        Message message = event.getMessage();
-
-        String content = (message.getContent());
-        TextChannel channel = event.getTextChannel();
-        String userName = event.getAuthor().getName();
-        List<Message.Attachment> attachment = event.getMessage().getAttachments();
-
-
-        //Pass the Discord message over to the TeleCordBot main class to decide how message will be handled.
-        //Contains the message text, the user who sent it, the channel it was from, and any attachments.
-        try {
-            listener.onDiscordMessageReceived(content, channel, userName, attachment);
-        } catch (IOException | TelegramApiException e) {
-            e.printStackTrace();
+        if (messageModel.hasFile()) {
+            Message returnMessage = messageChannel.sendFile(messageModel.getFileHandler().getFile(), messageModel.getFileHandler().getFileName(), msg).complete();
+            return new MessageModel(returnMessage);
+        } else {
+            Message returnMessage = messageChannel.sendMessage(msg).complete();
+            return new MessageModel(returnMessage);
         }
     }
 
-    TextChannel getChannelFromID(String channel){
-        System.out.println("GET TEXT CHANNEL BY ID RETURNS: " + getJda().getTextChannelById(channel).toString());
+    void updateMessage(MessageModel editedMessage) {
+        //Message updateMessage = new MessageBuilder().append(editedMessage.getFormattedMessageText()).build();
+        TextChannel textChannel = getChannelFromID(editedMessage.getChannel().getChannelId());
+        textChannel.editMessageById(editedMessage.getMessageId(), editedMessage.getMessageText()).queue();
+    }
+
+    void deleteMessage(MessageModel deleteMessage){
+        TextChannel textChannel = getChannelFromID(deleteMessage.getChannel().getChannelId());
+        textChannel.deleteMessageById(deleteMessage.getMessageId()).queue();
+    }
+
+    @Override
+    public void onMessageUpdate(MessageUpdateEvent event){
+        if(!event.getAuthor().isBot()){
+            Message message = event.getMessage();
+            MessageModel messageModel = new MessageModel(message);
+            listener.updateMessage(messageModel);
+        }
+    }
+
+    @Override
+    public void onMessageDelete(MessageDeleteEvent event) {
+            MessageModel message = new MessageModel();
+            ChannelObj channelObj = new ChannelObj();
+
+            channelObj.setChannelId(event.getTextChannel().getId());
+            channelObj.setChannelName(event.getTextChannel().getName());
+            channelObj.setSource(DISCORD);
+
+            message.setMessageId(event.getMessageId());
+            message.setChannel(channelObj);
+
+            listener.deleteMessage(message);
+    }
+
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+        if (event.getAuthor().isBot()) return;
+
+        Message message = event.getMessage();
+        MessageModel messageModel = new MessageModel(message);
+
+        if (!message.getAttachments().isEmpty()) {
+            FileHandler fileHandler = new FileHandler(message);
+            messageModel.setFileHandler(fileHandler);
+        }
+            listener.processMessage(messageModel);
+    }
+
+    private TextChannel getChannelFromID(String channel) {
         return getJda().getTextChannelById(channel);
+
+    }
+
+    boolean isAdmin(MessageModel message){
+        TextChannel channel = getChannelFromID(message.getChannel().getChannelId());
+        User user = getJda().getUserById(message.getUser().getUserId());
+        Guild guild = channel.getGuild();
+        Member member = guild.getMember(user);
+        List<Permission> permissions = member.getPermissions(channel);
+
+        for(Permission permission : permissions){
+            if(permission == Permission.MANAGE_CHANNEL){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public interface DiscordMessageListener {
+        void processMessage(MessageModel messageModel);
+        void updateMessage(MessageModel messageModel);
+        void deleteMessage(MessageModel messageModel);
     }
 
     private JDA getJda() {
         return jda.get();
     }
-
-
 }
