@@ -53,7 +53,7 @@ public class MessageModel {
 
         if (message.getCaption() != null) {
             this.messageText = message.getCaption();
-        } else {
+        } else if (message.hasText()) {
             this.messageText = message.getText();
         }
 
@@ -172,10 +172,10 @@ public class MessageModel {
             return messageText;
         } else if (hasFile() && (messageText == null || messageText.equalsIgnoreCase(""))) {
             return ("File from " + username);
-        } else {
+        } else if (messageText != null) {
             return (username + ": " + messageText);
         }
-
+        return null;
     }
 
     @Override

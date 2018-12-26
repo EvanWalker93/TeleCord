@@ -40,14 +40,14 @@ public class DiscordBot extends ListenerAdapter {
         if (messageModel.hasFile()) {
             Message returnMessage = messageChannel.sendFile(messageModel.getFileHandler().getFile(), messageModel.getFileHandler().getFileName(), msg).complete();
             return new MessageModel(returnMessage);
-        } else {
+        } else if (messageModel.getMessageText() != null) {
             Message returnMessage = messageChannel.sendMessage(msg).complete();
             return new MessageModel(returnMessage);
         }
+        return null;
     }
 
     void updateMessage(MessageModel editedMessage) {
-        //Message updateMessage = new MessageBuilder().append(editedMessage.getFormattedMessageText()).build();
         TextChannel textChannel = getChannelFromID(editedMessage.getChannel().getChannelId());
         textChannel.editMessageById(editedMessage.getMessageId(), editedMessage.getMessageText()).queue();
     }
@@ -68,8 +68,9 @@ public class DiscordBot extends ListenerAdapter {
 
     @Override
     public void onMessageDelete(MessageDeleteEvent event) {
+        System.out.println("Discord message Deleted event");
         MessageModel message = new MessageModel(event);
-            listener.deleteMessage(message);
+        listener.deleteMessage(message);
     }
 
     @Override

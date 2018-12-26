@@ -6,7 +6,9 @@ import TCBot.model.UserModel;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bson.types.ObjectId;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
 
 class TeleCordCommands {
 
@@ -251,7 +253,7 @@ class TeleCordCommands {
         return false;
     }
 
-    public void deleteMessage(MessageModel messageModel) {
+    void deleteMessage(MessageModel messageModel) {
         MessageModel deletedMessage = db.getMessage(messageModel);
         String source = messageModel.getChannel().getSource();
 

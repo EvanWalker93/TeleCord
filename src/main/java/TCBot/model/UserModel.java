@@ -30,7 +30,7 @@ public class UserModel {
         this.userId = message.getFrom().getId().toString();
     }
 
-    String getUsername() {
+    public String getUsername() {
         return username;
     }
 

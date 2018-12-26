@@ -122,13 +122,9 @@ public class TeleCordBot implements DiscordBot.DiscordMessageListener, TelegramB
         }
     }
 
-    //Only works with discord
     public void deleteMessage(MessageModel messageModel) {
         teleCordCommands.deleteMessage(messageModel);
     }
 
-    public Properties getProperties() {
-        return properties;
-    }
 }
 

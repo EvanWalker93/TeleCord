@@ -10,9 +10,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.ChatMember;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.InputStream;
@@ -36,10 +34,22 @@ public class TelegramBot extends TelegramLongPollingBot {
         else{
             Message message = update.getMessage();
             MessageModel messageModel = new MessageModel(message);
-            
+
             if (message.hasPhoto() || message.hasDocument() || message.hasSticker()) {
                 FileHandler fileHandler = new FileHandler(update);
                 messageModel.setFileHandler(fileHandler);
+            } else if (message.hasContact()) {
+                Contact contact = message.getContact();
+                String contactName = contact.getFirstName() + " " + contact.getLastName();
+                String phoneNumber = contact.getPhoneNumber();
+                messageModel.setMessageText(contactName + "\n" + phoneNumber);
+            } else if (message.hasLocation()) {
+                Location location = message.getLocation();
+                String lat = location.getLatitude().toString();
+                String lon = location.getLongitude().toString();
+                String url = "http://www.google.com/maps/place/" + lat + "," + lon;
+
+                messageModel.setMessageText(url);
             }
             listener.processMessage(messageModel);
         }
