@@ -22,9 +22,9 @@ public class UserModel {
         this.userId = message.getAuthor().getId();
     }
 
-    UserModel(org.telegram.telegrambots.api.objects.Message message){
+    UserModel(org.telegram.telegrambots.meta.api.objects.Message message) {
         this.username = message.getFrom().getUserName();
-        if (this.username.equalsIgnoreCase("null") || this.username == null) {
+        if (this.username.equalsIgnoreCase("null")) {
             this.username = message.getFrom().getFirstName() + " " + message.getFrom().getLastName();
         }
         this.userId = message.getFrom().getId().toString();

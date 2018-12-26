@@ -1,6 +1,7 @@
 package TCBot.model;
 
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.events.message.MessageDeleteEvent;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.*;
 
@@ -35,7 +36,13 @@ public class ChannelObj {
         this.source = "Discord";
     }
 
-    ChannelObj(org.telegram.telegrambots.api.objects.Message message) {
+    ChannelObj(MessageDeleteEvent event) {
+        this.channelId = event.getTextChannel().getId();
+        this.channelId = event.getTextChannel().getName();
+        this.source = "Discord";
+    }
+
+    ChannelObj(org.telegram.telegrambots.meta.api.objects.Message message) {
         this.channelId = message.getChatId().toString();
         this.channelName = message.getChat().getTitle();
         this.source = "Telegram";

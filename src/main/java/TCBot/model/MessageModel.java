@@ -2,6 +2,7 @@ package TCBot.model;
 
 import TCBot.FileHandler;
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.events.message.MessageDeleteEvent;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
@@ -10,7 +11,6 @@ import org.mongodb.morphia.annotations.Transient;
 
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 @Entity("messages")
@@ -26,28 +26,34 @@ public class MessageModel {
     @Indexed(unique = false)
     private ChannelObj channel;
     @Transient
-    private FileHandler fileHandler = new FileHandler();
+    private FileHandler fileHandler;
     private Set<MessageModel> childMessages;
 
     public MessageModel() {
         super();
     }
 
+    //Discord
     public MessageModel(Message message) {
         this.user = new UserModel(message);
-        this.messageText = message.getContent();
+        this.messageText = message.getContentDisplay();
         this.date = new Date();
         this.channel = new ChannelObj(message);
         this.messageId = message.getId();
     }
 
-    public MessageModel(org.telegram.telegrambots.api.objects.Message message) {
+    public MessageModel(MessageDeleteEvent event) {
+        this.messageId = event.getMessageId();
+        this.channel = new ChannelObj(event);
+    }
+
+    //Telegram
+    public MessageModel(org.telegram.telegrambots.meta.api.objects.Message message) {
         this.user = new UserModel(message);
 
-        if(message.getCaption() != null){
+        if (message.getCaption() != null) {
             this.messageText = message.getCaption();
-        }
-        else{
+        } else {
             this.messageText = message.getText();
         }
 
@@ -68,16 +74,16 @@ public class MessageModel {
         return messageText;
     }
 
+    public void setMessageText(String messageText) {
+        this.messageText = messageText;
+    }
+
     public UserModel getUser() {
         return user;
     }
 
     public void setUser(UserModel user) {
         this.user = user;
-    }
-
-    public void setMessageText(String messageText) {
-        this.messageText = messageText;
     }
 
     public Date getDate() {
@@ -144,7 +150,7 @@ public class MessageModel {
     public String getParameter() {
         String[] split = splitCommand(messageText);
         StringBuilder parameter = new StringBuilder();
-        for(int i = 1; i < split.length; i++){
+        for (int i = 1; i < split.length; i++) {
             parameter.append(split[i]);
         }
         return parameter.toString();
@@ -155,7 +161,7 @@ public class MessageModel {
     }
 
     public boolean hasFile() {
-        return fileHandler.hasFile();
+        return this.fileHandler != null;
     }
 
     public String getFormattedMessageText() {
@@ -164,14 +170,12 @@ public class MessageModel {
 
         if (username == null) {
             return messageText;
-        } else if (this.fileHandler != null) {
-            if (messageText == null || Objects.equals(messageText, "")) {
-                return ("File from " + username);
-            } else {
-                return (username + ": " + messageText);
-            }
+        } else if (hasFile() && (messageText == null || messageText.equalsIgnoreCase(""))) {
+            return ("File from " + username);
+        } else {
+            return (username + ": " + messageText);
         }
-        return null;
+
     }
 
     @Override

@@ -7,11 +7,11 @@ import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.events.message.MessageUpdateEvent;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 import javax.security.auth.login.LoginException;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -19,16 +19,15 @@ public class DiscordBot extends ListenerAdapter {
 
     private final AtomicReference<JDA> jda;
     private DiscordMessageListener listener;
-    private final String DISCORD = "Discord";
 
-    DiscordBot(DiscordMessageListener listener) throws LoginException, InterruptedException, RateLimitedException {
+    DiscordBot(DiscordMessageListener listener) throws LoginException {
         this.listener = listener;
 
         jda = new AtomicReference<>();
-        String token = TeleCordProps.getInstance().getProperty("discordBotToken");
+        String token = Objects.requireNonNull(TeleCordProps.getInstance()).getProperty("discordBotToken");
         JDABuilder builder = new JDABuilder(AccountType.BOT)
                 .setToken(token);
-        jda.set(builder.buildBlocking());
+        jda.set(builder.build());
         jda.get().addEventListener(this);
 
     }
@@ -69,16 +68,7 @@ public class DiscordBot extends ListenerAdapter {
 
     @Override
     public void onMessageDelete(MessageDeleteEvent event) {
-            MessageModel message = new MessageModel();
-            ChannelObj channelObj = new ChannelObj();
-
-            channelObj.setChannelId(event.getTextChannel().getId());
-            channelObj.setChannelName(event.getTextChannel().getName());
-            channelObj.setSource(DISCORD);
-
-            message.setMessageId(event.getMessageId());
-            message.setChannel(channelObj);
-
+        MessageModel message = new MessageModel(event);
             listener.deleteMessage(message);
     }
 

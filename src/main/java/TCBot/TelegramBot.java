@@ -2,32 +2,31 @@ package TCBot;
 
 import TCBot.model.ChannelObj;
 import TCBot.model.MessageModel;
-import org.telegram.telegrambots.api.methods.groupadministration.GetChatMember;
-import org.telegram.telegrambots.api.methods.send.SendDocument;
-import org.telegram.telegrambots.api.methods.send.SendMessage;
-import org.telegram.telegrambots.api.methods.send.SendPhoto;
-import org.telegram.telegrambots.api.methods.send.SendVideo;
-import org.telegram.telegrambots.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.api.objects.ChatMember;
-import org.telegram.telegrambots.api.objects.Message;
-import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.ChatMember;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.InputStream;
+import java.util.Objects;
 
 public class TelegramBot extends TelegramLongPollingBot {
 
     private TelegramMessageListener listener;
 
-    private String token = TeleCordProps.getInstance().getProperty("telegramBotToken");
+    private String token = Objects.requireNonNull(TeleCordProps.getInstance()).getProperty("telegramBotToken");
     private String botUserName = TeleCordProps.getInstance().getProperty("telegramBotUsername");
 
     @Override
     public void onUpdateReceived(Update update) {
-        Message message = null;
-        MessageModel messageModel = null;
 
         if (update.hasEditedMessage()) {
             MessageModel editedMessage = new MessageModel(update.getEditedMessage());
@@ -35,16 +34,17 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         }
         else{
-            message = update.getMessage();
-            messageModel = new MessageModel(message);
-
-            if (message.hasPhoto() || message.hasDocument() || message.getSticker() != null) {
+            Message message = update.getMessage();
+            MessageModel messageModel = new MessageModel(message);
+            
+            if (message.hasPhoto() || message.hasDocument() || message.hasSticker()) {
                 FileHandler fileHandler = new FileHandler(update);
                 messageModel.setFileHandler(fileHandler);
             }
             listener.processMessage(messageModel);
         }
     }
+
 
     void updateMessage(MessageModel editedMessage) {
         EditMessageText editMessage = new EditMessageText();
@@ -128,32 +128,33 @@ public class TelegramBot extends TelegramLongPollingBot {
             case "png":
                 SendPhoto Photo = new SendPhoto()
                         .setChatId(channel)
-                        .setNewPhoto(fileName, fis)
+                        .setPhoto(fileName, fis)
                         .setCaption(messageText);
 
-                return sendPhoto(Photo);
+                return execute(Photo);
             case "mp4":
             case "webm":
             case "gif":
                 SendVideo video = new SendVideo()
                         .setChatId(channel)
-                        .setNewVideo(fileName, fis)
+                        .setVideo(fileName, fis)
                         .setCaption(messageText);
 
-                return sendVideo(video);
+                return execute(video);
             default:
                 SendDocument document = new SendDocument()
                         .setChatId(channel)
-                        .setNewDocument(fileName, fis)
+                        .setDocument(fileName, fis)
                         .setCaption(messageText);
 
-                return sendDocument(document);
+                return execute(document);
         }
     }
 
     TelegramBot(TelegramMessageListener listener) {
         this.listener = listener;
     }
+
 
     @Override
     public String getBotUsername() {

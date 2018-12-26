@@ -3,14 +3,14 @@ package TCBot;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.requests.Requester;
 import org.apache.commons.io.IOUtils;
-import org.telegram.telegrambots.api.methods.GetFile;
-import org.telegram.telegrambots.api.objects.Document;
-import org.telegram.telegrambots.api.objects.File;
-import org.telegram.telegrambots.api.objects.PhotoSize;
-import org.telegram.telegrambots.api.objects.Update;
-import org.telegram.telegrambots.api.objects.stickers.Sticker;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
+import org.telegram.telegrambots.meta.api.objects.Document;
+import org.telegram.telegrambots.meta.api.objects.File;
+import org.telegram.telegrambots.meta.api.objects.PhotoSize;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.stickers.Sticker;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.*;
 import java.net.URL;
@@ -29,11 +29,13 @@ public class FileHandler extends TelegramLongPollingBot {
     public FileHandler() {
     }
 
+    //Discord Constructor
     FileHandler(Message message) {
         this.bytes = toByteArray(message);
         this.fileName = fileName(message);
     }
 
+    //Telegram Constructor
     FileHandler(Update update) {
         try {
             this.bytes = toByteArray(update);
@@ -79,27 +81,21 @@ public class FileHandler extends TelegramLongPollingBot {
             PhotoSize photo = getPhoto(update);
             try {
                 fis = new FileInputStream(downloadFile(getFilePath(photo)));
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (TelegramApiException e) {
+            } catch (FileNotFoundException | TelegramApiException e) {
                 e.printStackTrace();
             }
 
         } else if (update.getMessage().hasDocument()) {
             try {
                 fis = new FileInputStream(downloadFile(getFilePath(update.getMessage().getDocument())));
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (TelegramApiException e) {
+            } catch (FileNotFoundException | TelegramApiException e) {
                 e.printStackTrace();
             }
         } else if (update.getMessage().getSticker() != null) {
             Sticker sticker = update.getMessage().getSticker();
             try {
                 fis = new FileInputStream(downloadFile(getFilePath(sticker.getFileId())));
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (TelegramApiException e) {
+            } catch (FileNotFoundException | TelegramApiException e) {
                 e.printStackTrace();
             }
         } else {
@@ -128,13 +124,13 @@ public class FileHandler extends TelegramLongPollingBot {
         if (photo.hasFilePath()) { // If the file_path is already present, we are done!
             System.out.println(photo.getFileId());
             return photo.getFilePath();
-        } else { // If not, let find it
+        } else { // If not, find it
             // We create a GetFile method and set the file_id from the photo
             GetFile getFileMethod = new GetFile();
             getFileMethod.setFileId(photo.getFileId());
             try {
                 // We execute the method using AbsSender::getDocument method.
-                File file = getFile(getFileMethod);
+                File file = execute(getFileMethod);
                 // We now have the file_path
                 return file.getFilePath();
             } catch (TelegramApiException e) {
@@ -148,7 +144,7 @@ public class FileHandler extends TelegramLongPollingBot {
         GetFile getFileMethod = new GetFile();
         getFileMethod.setFileId(fileID);
         try {
-            File file = getFile(getFileMethod);
+            File file = execute(getFileMethod);
             return file.getFilePath();
         } catch (TelegramApiException e) {
             e.printStackTrace();
@@ -163,7 +159,7 @@ public class FileHandler extends TelegramLongPollingBot {
         getFileMethod.setFileId(document.getFileId());
         try {
             // We execute the method using AbsSender::getDocument method.
-            File file = getFile(getFileMethod);
+            File file = execute(getFileMethod);
             // We now have the file_path
             return file.getFilePath();
         } catch (TelegramApiException e) {
@@ -179,20 +175,14 @@ public class FileHandler extends TelegramLongPollingBot {
             // When receiving a photo, you usually get different sizes of it
             List<PhotoSize> photos = update.getMessage().getPhoto();
             // We fetch the bigger photo
-            return photos.stream()
-                    .sorted(Comparator.comparing(PhotoSize::getFileSize).reversed())
-                    .findFirst()
+            return photos.stream().max(Comparator.comparing(PhotoSize::getFileSize))
                     .orElse(null);
         }
         // Return null if not found
         return null;
     }
 
-    public boolean hasFile() {
-        return bytes != null;
-    }
-
-    public InputStream getFile() {
+    InputStream getFile() {
         return new ByteArrayInputStream(bytes);
     }
 
