@@ -5,10 +5,8 @@ import net.dv8tion.jda.core.requests.Requester;
 import org.apache.commons.io.IOUtils;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
-import org.telegram.telegrambots.meta.api.objects.Document;
+import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.api.objects.File;
-import org.telegram.telegrambots.meta.api.objects.PhotoSize;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.stickers.Sticker;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -76,31 +74,39 @@ public class FileHandler extends TelegramLongPollingBot {
 
     //Telegram
     private byte[] toByteArray(Update update) throws IOException {
-
-        if (update.getMessage().hasPhoto()) {
-            PhotoSize photo = getPhoto(update);
-            try {
+        org.telegram.telegrambots.meta.api.objects.Message message = update.getMessage();
+        try {
+            if (message.hasPhoto()) {
+                PhotoSize photo = getPhoto(update);
                 fis = new FileInputStream(downloadFile(getFilePath(photo)));
-            } catch (FileNotFoundException | TelegramApiException e) {
-                e.printStackTrace();
-            }
 
-        } else if (update.getMessage().hasDocument()) {
-            try {
-                fis = new FileInputStream(downloadFile(getFilePath(update.getMessage().getDocument())));
-            } catch (FileNotFoundException | TelegramApiException e) {
-                e.printStackTrace();
-            }
-        } else if (update.getMessage().getSticker() != null) {
-            Sticker sticker = update.getMessage().getSticker();
-            try {
+            } else if (message.hasDocument()) {
+                Document doc = message.getDocument();
+                fis = new FileInputStream(downloadFile(getFilePath(doc)));
+
+            } else if (message.hasSticker()) {
+                Sticker sticker = message.getSticker();
                 fis = new FileInputStream(downloadFile(getFilePath(sticker.getFileId())));
-            } catch (FileNotFoundException | TelegramApiException e) {
-                e.printStackTrace();
+
+            } else if (message.getVoice() != null) {
+                Voice voice = message.getVoice();
+                fis = new FileInputStream(downloadFile(getFilePath(voice.getFileId())));
+
+            } else if (message.hasVideo()) {
+                Video video = message.getVideo();
+                fis = new FileInputStream(downloadFile(getFilePath(video.getFileId())));
+
+            } else if (message.hasVideoNote()) {
+                VideoNote videoNote = message.getVideoNote();
+                fis = new FileInputStream(downloadFile(getFilePath(videoNote.getFileId())));
+
+            } else {
+                return null;
             }
-        } else {
-            return null;
+        } catch (FileNotFoundException | TelegramApiException e) {
+            e.printStackTrace();
         }
+
         return IOUtils.toByteArray(fis);
     }
 
@@ -109,12 +115,18 @@ public class FileHandler extends TelegramLongPollingBot {
     }
 
     private String fileName(Update update) {
-        if (update.getMessage().hasDocument()) {
-            return update.getMessage().getDocument().getFileName();
-        } else if (update.getMessage().hasPhoto()) {
+        org.telegram.telegrambots.meta.api.objects.Message message = update.getMessage();
+
+        if (message.hasDocument()) {
+            return message.getDocument().getFileName();
+        } else if (message.hasPhoto()) {
             return UUID.randomUUID().toString() + ".jpg";
-        } else if (update.getMessage().getSticker() != null) {
-            return update.getMessage().getSticker().getFileId() + ".jpg";
+        } else if (message.hasSticker()) {
+            return message.getSticker().getFileId() + ".jpg";
+        } else if (message.getVoice() != null) {
+            return UUID.randomUUID().toString() + ".ogg";
+        } else if (message.hasVideo() || message.hasVideoNote()) {
+            return UUID.randomUUID().toString() + ".mp4";
         }
         return null;
     }

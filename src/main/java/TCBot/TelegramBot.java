@@ -35,7 +35,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             Message message = update.getMessage();
             MessageModel messageModel = new MessageModel(message);
 
-            if (message.hasPhoto() || message.hasDocument() || message.hasSticker()) {
+            if (message.hasPhoto() || message.hasDocument() || message.hasSticker() || message.hasVideo() || message.hasVideoNote() || message.getVoice() != null) {
                 FileHandler fileHandler = new FileHandler(update);
                 messageModel.setFileHandler(fileHandler);
             } else if (message.hasContact()) {
